@@ -42,11 +42,15 @@ test('dashboard period control updates demo figures', async ({ page }) => {
 
 test('dashboard can add a validated demo transaction', async ({ page }) => {
   await page.goto('/app.html');
-  page.once('dialog', dialog => dialog.accept('Browser test vendor'));
-  page.once('dialog', dialog => dialog.accept('125,50'));
+  let dialogCount = 0;
+  page.on('dialog', async dialog => {
+    dialogCount += 1;
+    await dialog.accept(dialogCount === 1 ? 'Browser test vendor' : '125,50');
+  });
   await page.locator('#newBtn').click();
   await expect(page.locator('#transactionRows tr')).toHaveCount(7);
   await expect(page.locator('#transactionRows tr').first()).toContainText('Browser test vendor');
+  expect(dialogCount).toBe(2);
 });
 
 test('dashboard exports filtered transactions to CSV', async ({ page }) => {
