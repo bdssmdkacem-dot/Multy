@@ -1,0 +1,59 @@
+name: Validate Multy
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate dashboard HTML
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          path = Path("index.html")
+          assert path.is_file(), "index.html is missing"
+          source = path.read_text(encoding="utf-8")
+
+          class CheckHTML(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=True)
+                  self.tags = []
+                  self.ids = set()
+                  self.title_depth = 0
+                  self.title_text = []
+
+              def handle_starttag(self, tag, attrs):
+                  self.tags.append(tag)
+                  attrs = dict(attrs)
+                  if "id" in attrs:
+                      assert attrs["id"] not in self.ids, f"Duplicate id: {attrs['id']}"
+                      self.ids.add(attrs["id"])
+                  if tag == "title":
+                      self.title_depth += 1
+
+              def handle_endtag(self, tag):
+                  if tag == "title" and self.title_depth:
+                      self.title_depth -= 1
+
+              def handle_data(self, data):
+                  if self.title_depth:
+                      self.title_text.append(data)
+
+          parser = CheckHTML()
+          parser.feed(source)
+          parser.close()
+          assert "html" in parser.tags and "main" in parser.tags, "Expected html and main elements"
+          assert "script" in parser.tags and "style" in parser.tags, "Expected inline CSS and JS"
+          assert "transactionRows" in parser.ids and "search" in parser.ids, "Expected interactive dashboard controls"
+          assert "".join(parser.title_text).strip(), "Page title is missing"
+          assert 'lang="fr"' in source, "French document language is missing"
+          print(f"HTML checks passed: {len(parser.tags)} elements, {len(parser.ids)} unique IDs.")
+          PY
