@@ -12,7 +12,7 @@ test('marketing page loads with working in-page navigation and dashboard links',
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
 });
 
-test('marketing page has no horizontal overflow at desktop and phone widths', async ({ page }) => {
+test('marketing page has no horizontal overflow', async ({ page }) => {
   await page.goto('/');
   const metrics = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
@@ -26,11 +26,11 @@ test('dashboard search filters rows and shows an empty state', async ({ page }) 
   const rows = page.locator('#transactionRows tr');
   await expect(rows).toHaveCount(6);
   await page.locator('#search').fill('Notion');
-  await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText('Notion Labs');
+  await expect(page.locator('#transactionRows tr:visible')).toHaveCount(1);
+  await expect(page.locator('#transactionRows tr:visible').first()).toContainText('Notion Labs');
   await page.locator('#search').fill('no-such-transaction');
   await expect(page.locator('#emptyState')).toBeVisible();
-  await expect(rows).toHaveCount(6);
+  await expect(page.locator('#transactionRows tr:visible')).toHaveCount(0);
 });
 
 test('dashboard period control updates demo figures', async ({ page }) => {
@@ -49,7 +49,7 @@ test('dashboard can add a validated demo transaction', async ({ page }) => {
   await expect(page.locator('#transactionRows tr').first()).toContainText('Browser test vendor');
 });
 
-test('dashboard exports visible transactions to CSV', async ({ page }) => {
+test('dashboard exports filtered transactions to CSV', async ({ page }) => {
   await page.goto('/app.html');
   await page.locator('#search').fill('Notion');
   const downloadPromise = page.waitForEvent('download');
@@ -70,7 +70,7 @@ test('mobile dashboard menu opens and closes after navigation', async ({ page },
   await expect(page.locator('#sidebar')).not.toHaveClass(/open/);
 });
 
-test('dashboard has no horizontal page overflow at phone width', async ({ page }) => {
+test('dashboard has no horizontal page overflow', async ({ page }) => {
   await page.goto('/app.html');
   const metrics = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
