@@ -1,0 +1,12 @@
+{
+  "name": "multy-finance-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Responsive Multy marketing site and interactive financial dashboard prototype",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}
