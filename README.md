@@ -28,12 +28,18 @@ Puis ouvrez http://localhost:8000. Le tableau de bord est accessible à `/app.ht
 ## Tests automatisés
 
 - `.github/workflows/validate.yml` vérifie la structure HTML, les titres, la langue et les identifiants.
-- `.github/workflows/browser-and-pages.yml` lance Playwright sur Chromium desktop et mobile : navigation, affichage des fonctionnalités, recherche, période, ajout local, export CSV, menu mobile et débordement horizontal.
+- `.github/workflows/browser-and-pages.yml` lance Playwright sur Chromium desktop et mobile : navigation, recherche, période, ajout local, export CSV, menu mobile et débordement horizontal.
 - Les rapports de workflow sont disponibles dans l'onglet Actions du dépôt.
 
-## Publication
+## Publication avec Vercel
 
-Le workflow de publication prépare uniquement `index.html` et `app.html`, puis déploie ces fichiers vers GitHub Pages après la réussite des tests navigateur. GitHub Pages doit autoriser la source **GitHub Actions** dans Settings → Pages. Une exécution réussie du workflow est nécessaire pour confirmer la publication et fournir l'URL effective.
+1. Connectez-vous à Vercel et choisissez **Add New → Project**.
+2. Importez le dépôt GitHub `bdssmdkacem-dot/Multy` et sélectionnez la branche `main`.
+3. Choisissez **Other** comme framework. Laissez la commande de build vide et le répertoire de sortie à la racine du dépôt (`.`) si ces paramètres sont demandés.
+4. Cliquez sur **Deploy**. Vercel doit publier `index.html` à la racine et le tableau de bord à `/app.html`.
+5. Après la première publication, les pushes sur `main` déclencheront normalement un nouveau déploiement. Les tests Playwright desktop/mobile restent exécutés par GitHub Actions, indépendamment de Vercel.
+
+L'importation initiale et les autorisations GitHub doivent être confirmés dans votre session Vercel. Le déploiement n'est confirmé que lorsque Vercel affiche **Ready** et fournit une URL.
 
 ## Important
 
