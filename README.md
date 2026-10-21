@@ -16,8 +16,9 @@ Multy est actuellement un site vitrine et un tableau de bord interactif de démo
 1. Indépendants et auto-entrepreneurs.
 2. Commerçants et petites entreprises de services.
 3. TPE/PME qui ont besoin de suivre factures, dépenses, paiements et trésorerie.
-4. Parcours français et arabe, avec prise en charge correcte du RTL.
-5. Devise principale MAD / DH, dates et formats adaptés au contexte marocain.
+4. **Comptables indépendants et cabinets fiduciaires**, considérés comme une cible principale dès la conception.
+5. Parcours français et arabe, avec prise en charge correcte du RTL.
+6. Devise principale MAD / DH, dates et formats adaptés au contexte marocain.
 
 ## Feuille de route commerciale
 
@@ -27,15 +28,25 @@ Multy est actuellement un site vitrine et un tableau de bord interactif de démo
 - [ ] Revoir le parcours d'accueil, la navigation mobile et les appels à l'action avec des utilisateurs marocains.
 - [ ] Ajouter une page tarifaire transparente et un formulaire de demande de démonstration.
 
-### Phase 2 — fonctions métier
+### Phase 2 — première priorité : espace comptable multi-entreprises
+- [ ] Créer un espace de cabinet comptable capable de gérer plusieurs entreprises clientes depuis un seul compte professionnel.
+- [ ] Séparer strictement les données et documents de chaque entreprise ; aucune donnée ne doit être visible d'un autre client sans autorisation explicite.
+- [ ] Ajouter l'invitation des collaborateurs, des rôles minimaux (administrateur du cabinet, collaborateur, lecture seule) et des autorisations par entreprise.
+- [ ] Prévoir une boîte de réception des pièces, leur classement, leur statut de revue et les demandes de documents manquants.
+- [ ] Ajouter un journal d'audit consultable pour les accès et modifications importantes.
+- [ ] Tester les parcours avec au moins un comptable marocain avant de considérer le flux métier validé.
+
+### Phase 3 — fonctions de gestion et comptabilité
 - [ ] Profil d'entreprise et coordonnées configurables.
 - [ ] Clients, fournisseurs, produits/services et devis.
 - [ ] Création de factures PDF, avoirs, échéances et suivi des paiements.
 - [ ] Dépenses, catégories, justificatifs et rapports exportables.
+- [ ] Imports contrôlés CSV/Excel pour relevés et écritures, avec prévisualisation, détection des doublons et rapport d'erreurs.
+- [ ] Exports par entreprise et période pour faciliter le travail du comptable ; tout export doit respecter les permissions et être traçable.
 - [ ] Numérotation documentée, journal d'activité et archivage.
 - [ ] Règles de TVA configurables selon le régime applicable, sans supposer que tous les clients ont le même régime.
 
-### Phase 3 — plateforme fiable
+### Phase 4 — plateforme fiable
 - [ ] Authentification et récupération de compte.
 - [ ] API et base de données persistante.
 - [ ] Isolation stricte des données entre entreprises et rôles d'équipe.
@@ -43,7 +54,7 @@ Multy est actuellement un site vitrine et un tableau de bord interactif de démo
 - [ ] Sauvegardes testées, journalisation, supervision et procédure de restauration.
 - [ ] Tests d'accessibilité, de sécurité, de charge et d'utilisation sur appareils Android réels.
 
-### Phase 4 — lancement
+### Phase 5 — lancement
 - [ ] Revue juridique et fiscale au Maroc avec un professionnel qualifié avant de présenter les documents comme conformes.
 - [ ] Évaluer les formalités applicables auprès de la CNDP au titre de la loi 09-08, notamment si des données personnelles sont traitées ou hébergées à l'étranger.
 - [ ] Conditions d'utilisation, politique de confidentialité, politique de conservation et suppression des données.
