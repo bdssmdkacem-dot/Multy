@@ -1,0 +1,33 @@
+name: Published GitHub Pages browser acceptance
+on:
+  push:
+    branches: ['commercial/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  published-browser:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BASE_URL: https://bdssmdkacem-dot.github.io/Multy/
+    steps:
+      - name: Checkout browser acceptance tests
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run desktop and mobile tests against the published site
+        run: npm test
+      - name: Upload published-site failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-playwright-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
