@@ -99,11 +99,12 @@ def test_missing_invalid_and_expired_tokens_are_rejected():
     assert client.get("/companies", headers={"Authorization": f"Bearer {expired}"}).status_code == 401
 
 
-def test_inactive_user_is_rejected():
+def test_deactivated_user_existing_token_is_rejected_immediately():
+    existing_token = auth("alice")
     with TestingSession() as db:
         db.get(User, "alice").active = False
         db.commit()
-    assert client.get("/companies", headers=auth("alice")).status_code == 401
+    assert client.get("/companies", headers=existing_token).status_code == 401
 
 def test_membership_revocation_takes_effect_for_existing_token():
     with TestingSession() as db:
