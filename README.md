@@ -83,6 +83,13 @@ Références officielles de départ :
 
 A first API slice now exists under `backend/main.py` using FastAPI and SQLAlchemy, with PostgreSQL schema in `backend/schema.sql`. It provides health, assigned-company listing, and tenant-scoped transaction list/create endpoints. The server checks a signed bearer JWT, then loads the active user and company membership from the database for each request; role claims from the token are not trusted. A user with `read_only` membership cannot create transactions. Registration and token issuance are deliberately not implemented.
 
+### Authorization freshness and audit events
+
+- Every authenticated API request resolves the user from the database and rejects an inactive user, so disabling a user affects already-issued bearer tokens on the next request.
+- Company membership and role are read from the database for each company-scoped request. Removing membership denies the next request; changing a member to `read_only` blocks the next write without requiring a new token.
+- Creating a transaction and its `transaction.created` audit event happen in the same database transaction. The audit row stores actor, company, action, entity reference, currency metadata, and timestamp; it deliberately does not copy the transaction description or amount into the audit details.
+- The API currently has no endpoints for managing memberships or roles. Tests change those records directly in the test database to verify enforcement, not to claim a complete administration workflow. Audit rows are not exposed through an API, but production database privileges, retention, monitoring, and tamper-resistance still need a separate hardening review.
+
 ### PostgreSQL and live-container integration
 
 The `Multy PostgreSQL integration` workflow starts PostgreSQL 16, applies `backend/schema.sql`, runs the tenant-isolation suite against the real PostgreSQL engine, builds the API container, then launches it and tests the HTTP endpoints with a signed test token and seeded synthetic tenants. It verifies that the live API only lists the assigned company and returns 404 when the same user attempts to read another tenant. This is CI integration evidence, not a production deployment or an independent security audit.
