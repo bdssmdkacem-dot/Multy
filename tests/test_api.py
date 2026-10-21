@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 os.environ["MULTY_JWT_SECRET"] = "test-secret-not-for-production"
-from backend.main import Base, Company, Firm, Membership, Transaction, User, app, get_db
+from backend.main import AuditLog, Base, Company, Firm, Membership, Transaction, User, app, get_db
 
 engine = create_engine(
     "sqlite://",
@@ -104,3 +104,30 @@ def test_inactive_user_is_rejected():
         db.get(User, "alice").active = False
         db.commit()
     assert client.get("/companies", headers=auth("alice")).status_code == 401
+
+def test_membership_revocation_takes_effect_for_existing_token():
+    with TestingSession() as db:
+        db.delete(db.get(Membership, ("alice", "company-a")))
+        db.commit()
+    response = client.get("/companies/company-a/transactions", headers=auth("alice"))
+    assert response.status_code == 404
+
+
+def test_role_change_takes_effect_without_reissuing_token():
+    with TestingSession() as db:
+        membership = db.get(Membership, ("alice", "company-a"))
+        membership.role = "read_only"
+        db.commit()
+    response = client.post("/companies/company-a/transactions", headers=auth("alice"), json={"description": "Denied after role change", "amount": "1.00"})
+    assert response.status_code == 403
+
+
+def test_transaction_creation_writes_audit_event_atomically():
+    response = client.post("/companies/company-a/transactions", headers=auth("alice"), json={"description": "Audited transaction", "amount": "15.00"})
+    assert response.status_code == 201
+    with TestingSession() as db:
+        events = db.query(AuditLog).filter_by(actor_user_id="alice", company_id="company-a", action="transaction.created").all()
+        assert len(events) == 1
+        assert events[0].entity_type == "transaction"
+        assert events[0].entity_id == str(response.json()["id"])
+
