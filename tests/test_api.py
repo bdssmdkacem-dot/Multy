@@ -132,3 +132,33 @@ def test_transaction_creation_writes_audit_event_atomically():
         assert events[0].entity_type == "transaction"
         assert events[0].entity_id == str(response.json()["id"])
 
+def test_request_body_cannot_override_company_scope():
+    response = client.post(
+        "/companies/company-a/transactions",
+        headers=auth("alice"),
+        json={"description": "Scoped by path", "amount": "7.00", "company_id": "company-b"},
+    )
+    assert response.status_code == 201
+    assert response.json()["company_id"] == "company-a"
+    with TestingSession() as db:
+        assert db.query(Transaction).filter_by(company_id="company-b", description="Scoped by path").count() == 0
+
+
+def test_company_in_same_firm_is_not_accessible_without_explicit_membership():
+    with TestingSession() as db:
+        db.add(Company(id="company-a2", firm_id="firm-a", name="Unassigned client"))
+        db.commit()
+    listed = client.get("/companies", headers=auth("alice"))
+    denied = client.get("/companies/company-a2/transactions", headers=auth("alice"))
+    assert [row["id"] for row in listed.json()] == ["company-a"]
+    assert denied.status_code == 404
+
+
+def test_invalid_currency_and_malformed_financial_values_are_rejected():
+    wrong_currency = client.post("/companies/company-a/transactions", headers=auth("alice"), json={"description": "Wrong currency", "amount": "1.00", "currency": "USD"})
+    malformed_amount = client.post("/companies/company-a/transactions", headers=auth("alice"), json={"description": "Malformed amount", "amount": "not-a-number"})
+    overlong_description = client.post("/companies/company-a/transactions", headers=auth("alice"), json={"description": "x" * 241, "amount": "1.00"})
+    assert wrong_currency.status_code == 422
+    assert malformed_amount.status_code == 422
+    assert overlong_description.status_code == 422
+\n
