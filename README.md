@@ -103,7 +103,7 @@ Set a strong, unique `POSTGRES_PASSWORD` and a separate random `MULTY_JWT_SECRET
 docker compose -f docker-compose.api.yml up --build
 ```
 
-The local database port is bound to loopback only. The initial SQL schema is applied only when PostgreSQL initializes a fresh data volume; schema changes need a proper versioned migration process. Do not use the sample environment for production.
+The local database port is bound to loopback only. Alembic revisions under `migrations/` are the canonical versioned schema path; the API container runs `alembic upgrade head` before starting. Existing databases previously initialized directly from `backend/schema.sql` need a reviewed baseline/adoption procedure before switching to Alembic. Do not use the sample environment for production.
 
 **Security boundary:** this is a backend foundation, not yet a production service. There is no login/token issuer, no account provisioning workflow, no HTTPS/reverse-proxy configuration, no rate limiting, no audit trail, no backup/restore drill, no migration runner, and the static dashboard is not connected to this API. Keep public registration closed and do not enter real customer or accounting data until deployment hardening and independent authorization/security tests pass.
 
