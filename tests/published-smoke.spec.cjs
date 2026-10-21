@@ -9,7 +9,6 @@ test('published marketing page loads and dashboard entry point works', async ({ 
   await page.getByRole('link', { name: /Explorer le tableau de bord/i }).click();
   await expect(page).toHaveURL(/app\.html$/);
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
-  await expect(page.locator('body')).toContainText('Montants fictifs');
 });
 
 test('published dashboard search and period controls are interactive', async ({ page }) => {
@@ -43,8 +42,13 @@ test('published dashboard fits mobile width and its menu works on phones', async
   }
 });
 
-test('published release matches Moroccan market and discloses demo currency', async ({ page }) => {
+test('published release matches Moroccan market and discloses demo currency', async ({ page }, testInfo) => {
   await page.goto('./app.html');
+  if (testInfo.project.name.startsWith('mobile')) {
+    await page.goto('./');
+    await expect(page.locator('#marketingMenuToggle')).toBeVisible();
+    await page.goto('./app.html');
+  }
   await expect(page.locator('body')).toContainText('Montants fictifs en DH');
   await expect(page.locator('body')).not.toContainText('€');
 });
