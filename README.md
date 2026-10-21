@@ -83,6 +83,12 @@ Références officielles de départ :
 
 A first API slice now exists under `backend/main.py` using FastAPI and SQLAlchemy, with PostgreSQL schema in `backend/schema.sql`. It provides health, assigned-company listing, and tenant-scoped transaction list/create endpoints. The server checks a signed bearer JWT, then loads the active user and company membership from the database for each request; role claims from the token are not trusted. A user with `read_only` membership cannot create transactions. Registration and token issuance are deliberately not implemented.
 
+### Request-tampering and append-only audit controls
+
+The API's company scope is derived from the authorized URL and the caller's current database membership, not a client-supplied `company_id` field. The API test suites include forged-body scope attempts, an unassigned company within the same firm, invalid currency/amount/description inputs, membership revocation, role changes, and inactive-user token rejection.
+
+Migration `0003_append_only_audit` removes cascading foreign-key behavior from historical actor/company references and installs a PostgreSQL trigger that rejects UPDATE and DELETE on `audit_logs`. Audit events intentionally avoid storing transaction descriptions and amounts. This protects against ordinary application/database-role mutation while the trigger is active; a database owner or superuser can still alter schema or disable triggers, so production needs restricted database roles, monitored privileged access, backups, and external log retention. The test workflow verifies the trigger on PostgreSQL; SQLite unit tests do not prove this database-specific control.
+
 ### Authorization freshness and audit events
 
 - Every authenticated API request resolves the user from the database and rejects an inactive user, so disabling a user affects already-issued bearer tokens on the next request.
