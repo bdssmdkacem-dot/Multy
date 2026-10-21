@@ -55,3 +55,22 @@ jobs:
         run: python -m pytest -q tests/test_postgres_api.py
       - name: Build API container image
         run: docker build -f Dockerfile.api -t multy-api:ci .
+      - name: Start API container against PostgreSQL
+        run: |
+          docker run -d --name multy-api-ci --network host \
+            -e DATABASE_URL=postgresql+psycopg://multy:test-only-password@127.0.0.1:5432/multy_test \
+            -e MULTY_JWT_SECRET="$MULTY_JWT_SECRET" multy-api:ci
+      - name: Smoke-test live HTTP endpoints
+        run: |
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              break
+            fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8000/health
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8000/companies)
+          test "$status" = "401"
+      - name: Print API container logs on failure
+        if: failure()
+        run: docker logs multy-api-ci || true
