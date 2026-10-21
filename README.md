@@ -88,7 +88,7 @@ npm test
 
 Les tests actuels valident les principaux parcours du prototype dans Chromium desktop/mobile, dont la recherche et la sélection d'entreprises ainsi que la revue temporaire de documents fictifs. Ils ne prouvent ni la sécurité d'une future API, ni la conformité fiscale, ni le bon fonctionnement sur tous les téléphones réels.
 
-**Ordre de livraison convenu :** avancer phase par phase, tester كل مرحلة قبل الانتقال إلى التالية، وتأجيل واجهات التسجيل وفتح الحسابات إلى المرحلة الأخيرة. هذا لا يعني تأجيل تصميم الأمان: يجب بناء صلاحيات وعزل بيانات آمنين قبل السماح بأي حسابات أو بيانات حقيقية.
+**Ordre de livraison convenu :** avancer phase par phase, valider chaque étape avant de passer à la suivante et réserver les écrans d'inscription et d'ouverture des comptes à la dernière étape. هذا لا يعني تأجيل تصميم الأمان: يجب بناء صلاحيات وعزل بيانات آمنين قبل السماح بأي حسابات أو بيانات حقيقية.
 
 ## Publication
 
