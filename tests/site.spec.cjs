@@ -119,3 +119,18 @@ test('accountant can add a temporary demo company without registration', async (
   await expect(page.locator('#companyDetailName')).toHaveText('Test Fiduciaire');
   await expect(page.locator('#companyDetailNote')).toContainText('temporairement');
 });
+
+test('accountant can review demo documents and filter by status', async ({ page }) => {
+  await page.goto('/app.html');
+  await page.locator('.nav button[data-page="Entreprises clientes"]').click();
+  await page.locator('#companyList .company-row[data-company="atlas"]').click();
+  await page.locator('#reviewCompanyBtn').click();
+  await expect(page.locator('#documentReview')).toHaveClass(/active/);
+  await expect(page.locator('#documentList .document-row')).toHaveCount(3);
+  await page.locator('#documentList .document-row[data-document-id="at-1"] button[data-doc-action="valid"]').click();
+  await expect(page.locator('#documentList .document-row[data-document-id="at-1"] .document-status')).toHaveText('Validé');
+  await expect(page.locator('#companyDocs')).toHaveText('1');
+  await page.locator('#documentFilter').selectOption('review');
+  await expect(page.locator('#documentList .document-row')).toHaveCount(1);
+  await expect(page.locator('#documentList .document-row').first()).toContainText('Justificatif de paiement');
+});
