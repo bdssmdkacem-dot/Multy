@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 test('marketing page loads with working in-page navigation and dashboard links', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await expect(page).toHaveTitle(/Multy/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('vision');
   await expect(page.locator('body')).toContainText('AU MAROC');
@@ -17,7 +17,7 @@ test('marketing page loads with working in-page navigation and dashboard links',
 
 test('marketing navigation opens and closes accessibly on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('./');
   const toggle = page.locator('#marketingMenuToggle');
   const nav = page.locator('#marketingNav');
   await expect(toggle).toBeVisible();
@@ -33,7 +33,7 @@ test('marketing navigation opens and closes accessibly on mobile', async ({ page
 });
 
 test('marketing page has no horizontal overflow', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   const metrics = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
     content: document.documentElement.scrollWidth
@@ -42,7 +42,7 @@ test('marketing page has no horizontal overflow', async ({ page }) => {
 });
 
 test('dashboard search filters rows and shows an empty state', async ({ page }) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   const rows = page.locator('#transactionRows tr');
   await expect(rows).toHaveCount(6);
   await page.locator('#search').fill('Notion');
@@ -54,14 +54,14 @@ test('dashboard search filters rows and shows an empty state', async ({ page }) 
 });
 
 test('dashboard period control updates demo figures', async ({ page }) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   await page.locator('#period').selectOption('quarter');
   await expect(page.locator('#incomeMetric')).toContainText('52 780,00');
   await expect(page.locator('#toast')).toContainText('Période mise à jour');
 });
 
 test('dashboard can add a validated demo transaction', async ({ page }) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   let dialogCount = 0;
   page.on('dialog', async dialog => {
     dialogCount += 1;
@@ -74,7 +74,7 @@ test('dashboard can add a validated demo transaction', async ({ page }) => {
 });
 
 test('dashboard exports filtered transactions to CSV', async ({ page }) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   await page.locator('#search').fill('Notion');
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#exportBtn').click();
@@ -84,7 +84,7 @@ test('dashboard exports filtered transactions to CSV', async ({ page }) => {
 
 test('mobile dashboard menu opens and closes after navigation', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.startsWith('mobile'), 'Phone-specific menu check');
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   const toggle = page.locator('#menuToggle');
   await expect(toggle).toBeVisible();
   await toggle.click();
@@ -95,7 +95,7 @@ test('mobile dashboard menu opens and closes after navigation', async ({ page },
 });
 
 test('dashboard has no horizontal page overflow', async ({ page }) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   const metrics = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
     content: document.documentElement.scrollWidth
@@ -104,7 +104,7 @@ test('dashboard has no horizontal page overflow', async ({ page }) => {
 });
 
 test('Moroccan demo uses dirhams and clearly discloses demo status', async ({ page }) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   await expect(page.locator('body')).toContainText('Montants fictifs en DH');
   await expect(page.locator('body')).not.toContainText('€');
   page.once('dialog', async dialog => {
@@ -115,7 +115,7 @@ test('Moroccan demo uses dirhams and clearly discloses demo status', async ({ pa
 });
 
 test('accountant workspace lists and filters client companies', async ({ page }, testInfo) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
   await page.locator('.nav button[data-page="Entreprises clientes"]').click();
   await expect(page.locator('#accountantWorkspace')).toHaveClass(/active/);
@@ -131,7 +131,7 @@ test('accountant workspace lists and filters client companies', async ({ page },
 });
 
 test('accountant can add a temporary demo company without registration', async ({ page }, testInfo) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
   await page.locator('.nav button[data-page="Entreprises clientes"]').click();
   page.once('dialog', dialog => dialog.accept('Test Fiduciaire'));
@@ -142,7 +142,7 @@ test('accountant can add a temporary demo company without registration', async (
 });
 
 test('accountant can review demo documents and filter by status', async ({ page }, testInfo) => {
-  await page.goto('/app.html');
+  await page.goto('./app.html');
   if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
   await page.locator('.nav button[data-page="Entreprises clientes"]').click();
   await page.locator('#companyList .company-row[data-company="atlas"]').click();
