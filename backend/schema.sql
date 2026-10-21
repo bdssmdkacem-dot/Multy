@@ -30,3 +30,16 @@ CREATE TABLE IF NOT EXISTS transactions (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ix_transactions_company_id ON transactions(company_id);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id bigserial PRIMARY KEY,
+    actor_user_id varchar(36) REFERENCES users(id) ON DELETE SET NULL,
+    company_id varchar(36) REFERENCES companies(id) ON DELETE SET NULL,
+    action varchar(80) NOT NULL,
+    entity_type varchar(80) NOT NULL,
+    entity_id varchar(80),
+    details json NOT NULL DEFAULT '{}'::json,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_audit_logs_actor_user_id ON audit_logs(actor_user_id);
+CREATE INDEX IF NOT EXISTS ix_audit_logs_company_id ON audit_logs(company_id);
