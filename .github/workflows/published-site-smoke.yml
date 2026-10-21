@@ -22,7 +22,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run desktop and mobile tests against the published site
-        run: npm test
+        run: npx playwright test tests/published-smoke.spec.cjs
       - name: Upload published-site failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
