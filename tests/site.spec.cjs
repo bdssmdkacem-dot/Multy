@@ -96,3 +96,26 @@ test('Moroccan demo uses dirhams and clearly discloses demo status', async ({ pa
   });
   await page.locator('#newBtn').click();
 });
+
+test('accountant workspace lists and filters client companies', async ({ page }) => {
+  await page.goto('/app.html');
+  await page.locator('.nav button[data-page="Entreprises clientes"]').click();
+  await expect(page.locator('#accountantWorkspace')).toHaveClass(/active/);
+  await expect(page.locator('#companyList .company-row:visible')).toHaveCount(3);
+  await page.locator('#companyList .company-row[data-company="atlas"]').click();
+  await expect(page.locator('#companyDetailName')).toHaveText('Atlas Distribution');
+  await expect(page.locator('#companyDocs')).toHaveText('2');
+  await page.locator('#companySearch').fill('Argan');
+  await expect(page.locator('#companyList .company-row:visible')).toHaveCount(1);
+  await expect(page.locator('#companyList .company-row:visible').first()).toContainText('Argan & Vie');
+});
+
+test('accountant can add a temporary demo company without registration', async ({ page }) => {
+  await page.goto('/app.html');
+  await page.locator('.nav button[data-page="Entreprises clientes"]').click();
+  page.once('dialog', dialog => dialog.accept('Test Fiduciaire'));
+  await page.locator('#addCompanyBtn').click();
+  await expect(page.locator('#companyList .company-row')).toHaveCount(4);
+  await expect(page.locator('#companyDetailName')).toHaveText('Test Fiduciaire');
+  await expect(page.locator('#companyDetailNote')).toContainText('temporairement');
+});
