@@ -161,4 +161,4 @@ def test_invalid_currency_and_malformed_financial_values_are_rejected():
     assert wrong_currency.status_code == 422
     assert malformed_amount.status_code == 422
     assert overlong_description.status_code == 422
-\n
+
