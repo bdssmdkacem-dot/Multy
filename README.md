@@ -30,6 +30,7 @@ Multy est actuellement un site vitrine et un tableau de bord interactif de démo
 
 ### Phase 2 — première priorité : espace comptable multi-entreprises
 - [x] Ajouter un premier parcours visuel de portefeuille multi-entreprises dans la démo, avec sélection, recherche et ajout temporaire d'une entreprise fictive.
+- [x] Ajouter un flux de revue documentaire de démonstration : liste de pièces fictives, filtre par statut, validation et demande de pièce, sans téléversement ni sauvegarde durable.
 - [ ] Construire l'espace de cabinet comptable persistant, capable de gérer plusieurs entreprises clientes depuis un compte professionnel.
 - [ ] Séparer strictement les données et documents de chaque entreprise côté serveur ; aucune donnée ne doit être visible d'un autre client sans autorisation explicite.
 - [ ] Ajouter l'invitation des collaborateurs, des rôles minimaux (administrateur du cabinet, collaborateur, lecture seule) et des autorisations par entreprise.
@@ -85,7 +86,7 @@ npx playwright install --with-deps chromium
 npm test
 ```
 
-Les tests actuels valident les principaux parcours du prototype dans Chromium desktop/mobile, dont la recherche et la sélection d'entreprises dans l'espace comptable de démonstration. Ils ne prouvent ni la sécurité d'une future API, ni la conformité fiscale, ni le bon fonctionnement sur tous les téléphones réels.
+Les tests actuels valident les principaux parcours du prototype dans Chromium desktop/mobile, dont la recherche et la sélection d'entreprises ainsi que la revue temporaire de documents fictifs. Ils ne prouvent ni la sécurité d'une future API, ni la conformité fiscale, ni le bon fonctionnement sur tous les téléphones réels.
 
 **Ordre de livraison convenu :** avancer phase par phase, tester كل مرحلة قبل الانتقال إلى التالية، وتأجيل واجهات التسجيل وفتح الحسابات إلى المرحلة الأخيرة. هذا لا يعني تأجيل تصميم الأمان: يجب بناء صلاحيات وعزل بيانات آمنين قبل السماح بأي حسابات أو بيانات حقيقية.
 
