@@ -6,6 +6,7 @@ import jwt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
 os.environ.setdefault("MULTY_JWT_SECRET", "postgres-test-secret-not-for-production")
 from backend.main import AuditLog, Membership, SessionLocal, User, app, get_db
@@ -28,7 +29,7 @@ app.dependency_overrides[get_db] = override_db
 def seed_postgres():
     # This suite intentionally targets PostgreSQL, not the SQLite unit-test database.
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE TABLE transactions, memberships, companies, users, firms RESTART IDENTITY CASCADE"))
+        db.execute(text("TRUNCATE TABLE audit_logs, transactions, memberships, companies, users, firms RESTART IDENTITY CASCADE"))
         statements = [
             "INSERT INTO firms (id, name) VALUES ('pg-firm-a', 'Cabinet A'), ('pg-firm-b', 'Cabinet B')",
             """INSERT INTO users (id, email, active) VALUES
@@ -133,3 +134,57 @@ def test_postgres_deactivation_rejects_previously_issued_token():
     response = client.get("/companies", headers=existing_token)
     assert response.status_code == 401
 
+def test_postgres_request_body_cannot_override_company_scope():
+    response = client.post(
+        "/companies/pg-company-a/transactions",
+        headers=auth("pg-alice"),
+        json={"description": "Scoped by URL", "amount": "8.00", "company_id": "pg-company-b"},
+    )
+    assert response.status_code == 201
+    assert response.json()["company_id"] == "pg-company-a"
+    with SessionLocal() as db:
+        assert db.execute(text("SELECT count(*) FROM transactions WHERE company_id='pg-company-b' AND description='Scoped by URL'")).scalar_one() == 0
+
+
+def test_postgres_company_in_same_firm_still_requires_explicit_membership():
+    with SessionLocal() as db:
+        db.execute(text("INSERT INTO companies (id, firm_id, name) VALUES ('pg-company-a2', 'pg-firm-a', 'Unassigned client')"))
+        db.commit()
+    listed = client.get("/companies", headers=auth("pg-alice"))
+    denied = client.get("/companies/pg-company-a2/transactions", headers=auth("pg-alice"))
+    assert [row["id"] for row in listed.json()] == ["pg-company-a"]
+    assert denied.status_code == 404
+
+
+def test_postgres_rejects_invalid_currency_amount_and_description():
+    wrong_currency = client.post("/companies/pg-company-a/transactions", headers=auth("pg-alice"), json={"description": "Wrong currency", "amount": "1.00", "currency": "USD"})
+    malformed_amount = client.post("/companies/pg-company-a/transactions", headers=auth("pg-alice"), json={"description": "Malformed amount", "amount": "not-a-number"})
+    overlong_description = client.post("/companies/pg-company-a/transactions", headers=auth("pg-alice"), json={"description": "x" * 241, "amount": "1.00"})
+    assert wrong_currency.status_code == 422
+    assert malformed_amount.status_code == 422
+    assert overlong_description.status_code == 422
+
+
+def test_postgres_audit_log_rejects_update_and_delete():
+    created = client.post("/companies/pg-company-a/transactions", headers=auth("pg-alice"), json={"description": "Protected audit event", "amount": "19.00"})
+    assert created.status_code == 201
+    with SessionLocal() as db:
+        event_id = db.execute(text("SELECT id FROM audit_logs WHERE entity_id=:entity_id AND action='transaction.created'"), {"entity_id": str(created.json()["id"])}).scalar_one()
+        with pytest.raises(DBAPIError, match="append-only"):
+            db.execute(text("UPDATE audit_logs SET action='tampered' WHERE id=:id"), {"id": event_id})
+            db.commit()
+        db.rollback()
+        with pytest.raises(DBAPIError, match="append-only"):
+            db.execute(text("DELETE FROM audit_logs WHERE id=:id"), {"id": event_id})
+            db.commit()
+        db.rollback()
+        assert db.execute(text("SELECT action FROM audit_logs WHERE id=:id"), {"id": event_id}).scalar_one() == "transaction.created"
+
+
+def test_postgres_audit_rows_do_not_contain_financial_description_or_amount():
+    client.post("/companies/pg-company-a/transactions", headers=auth("pg-alice"), json={"description": "Sensitive invoice text", "amount": "321.45"})
+    with SessionLocal() as db:
+        details = db.execute(text("SELECT details::text FROM audit_logs WHERE action='transaction.created' AND company_id='pg-company-a'")).scalar_one()
+        assert "Sensitive invoice text" not in details
+        assert "321.45" not in details
+\n
