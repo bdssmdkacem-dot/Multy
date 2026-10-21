@@ -9,7 +9,7 @@ from typing import Generator
 import jwt
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from pydantic import BaseModel, Field, ConfigDict
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, create_engine, select
+from sqlalchemy import DateTime, ForeignKey, JSON, Numeric, String, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 
@@ -61,6 +61,18 @@ class Transaction(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2))
     currency: Mapped[str] = mapped_column(String(3), default="MAD")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    actor_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    company_id: Mapped[str | None] = mapped_column(ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True)
+    action: Mapped[str] = mapped_column(String(80), nullable=False)
+    entity_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    entity_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    details: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
 class TransactionIn(BaseModel):
@@ -158,6 +170,15 @@ def create_transaction(company_id: str, payload: TransactionIn, user: User = Dep
         raise HTTPException(status_code=403, detail="Read-only membership cannot create transactions")
     transaction = Transaction(company_id=company.id, description=payload.description, amount=payload.amount, currency=payload.currency)
     db.add(transaction)
+    db.flush()
+    db.add(AuditLog(
+        actor_user_id=user.id,
+        company_id=company.id,
+        action="transaction.created",
+        entity_type="transaction",
+        entity_id=str(transaction.id),
+        details={"currency": payload.currency},
+    ))
     db.commit()
     db.refresh(transaction)
     return transaction
