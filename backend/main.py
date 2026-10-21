@@ -16,6 +16,9 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sess
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./multy-dev.db")
 JWT_SECRET = os.getenv("MULTY_JWT_SECRET", "")
 JWT_ALGORITHM = "HS256"
+JWT_ISSUER = "multy-api"
+JWT_AUDIENCE = "multy-client"
+JWT_MAX_LIFETIME_SECONDS = 15 * 60
 
 _engine_options = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=_engine_options)
@@ -115,10 +118,25 @@ def authenticated_user(
         raise HTTPException(status_code=401, detail="Bearer token required", headers={"WWW-Authenticate": "Bearer"})
     token = authorization[7:].strip()
     try:
-        claims = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], options={"require": ["sub", "exp"]})
+        claims = jwt.decode(
+            token,
+            JWT_SECRET,
+            algorithms=[JWT_ALGORITHM],
+            issuer=JWT_ISSUER,
+            audience=JWT_AUDIENCE,
+            options={"require": ["sub", "exp", "iat", "iss", "aud"]},
+        )
         user_id = claims["sub"]
+        issued_at = claims["iat"]
+        expires_at = claims["exp"]
         if not isinstance(user_id, str) or not user_id:
             raise jwt.InvalidTokenError("Invalid subject")
+        if isinstance(issued_at, bool) or not isinstance(issued_at, (int, float)):
+            raise jwt.InvalidTokenError("Invalid issued-at claim")
+        if isinstance(expires_at, bool) or not isinstance(expires_at, (int, float)):
+            raise jwt.InvalidTokenError("Invalid expiration claim")
+        if expires_at <= issued_at or expires_at - issued_at > JWT_MAX_LIFETIME_SECONDS:
+            raise jwt.InvalidTokenError("Token lifetime exceeds policy")
     except (jwt.InvalidTokenError, KeyError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid or expired token", headers={"WWW-Authenticate": "Bearer"})
     user = db.get(User, user_id)
