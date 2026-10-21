@@ -97,8 +97,9 @@ test('Moroccan demo uses dirhams and clearly discloses demo status', async ({ pa
   await page.locator('#newBtn').click();
 });
 
-test('accountant workspace lists and filters client companies', async ({ page }) => {
+test('accountant workspace lists and filters client companies', async ({ page }, testInfo) => {
   await page.goto('/app.html');
+  if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
   await page.locator('.nav button[data-page="Entreprises clientes"]').click();
   await expect(page.locator('#accountantWorkspace')).toHaveClass(/active/);
   await expect(page.locator('#companyList .company-row:visible')).toHaveCount(3);
@@ -110,8 +111,9 @@ test('accountant workspace lists and filters client companies', async ({ page })
   await expect(page.locator('#companyList .company-row:visible').first()).toContainText('Argan & Vie');
 });
 
-test('accountant can add a temporary demo company without registration', async ({ page }) => {
+test('accountant can add a temporary demo company without registration', async ({ page }, testInfo) => {
   await page.goto('/app.html');
+  if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
   await page.locator('.nav button[data-page="Entreprises clientes"]').click();
   page.once('dialog', dialog => dialog.accept('Test Fiduciaire'));
   await page.locator('#addCompanyBtn').click();
@@ -120,8 +122,9 @@ test('accountant can add a temporary demo company without registration', async (
   await expect(page.locator('#companyDetailNote')).toContainText('temporairement');
 });
 
-test('accountant can review demo documents and filter by status', async ({ page }) => {
+test('accountant can review demo documents and filter by status', async ({ page }, testInfo) => {
   await page.goto('/app.html');
+  if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
   await page.locator('.nav button[data-page="Entreprises clientes"]').click();
   await page.locator('#companyList .company-row[data-company="atlas"]').click();
   await page.locator('#reviewCompanyBtn').click();
