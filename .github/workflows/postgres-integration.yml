@@ -77,7 +77,7 @@ jobs:
           from datetime import datetime, timedelta, timezone
           import jwt
           now = datetime.now(timezone.utc)
-print(jwt.encode({"sub": "live-user", "iat": now, "exp": now + timedelta(minutes=5), "iss": "multy-api", "aud": "multy-client"}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256"))
+          print(jwt.encode({"sub": "live-user", "iat": now, "exp": now + timedelta(minutes=5), "iss": "multy-api", "aud": "multy-client"}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256"))
           PY
           )
           companies=$(curl --fail --silent -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8000/companies)
