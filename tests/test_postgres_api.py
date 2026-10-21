@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 os.environ.setdefault("MULTY_JWT_SECRET", "postgres-test-secret-not-for-production")
-from backend.main import SessionLocal, app, get_db
+from backend.main import AuditLog, Membership, SessionLocal, app, get_db
 
 client = TestClient(app)
 
@@ -99,3 +99,29 @@ def test_postgres_valid_write_persists_and_is_visible_to_authorized_user():
 def test_postgres_rejects_missing_and_expired_tokens():
     assert client.get("/companies").status_code == 401
     assert client.get("/companies", headers={"Authorization": f"Bearer {token('pg-alice', expired=True)}"}).status_code == 401
+
+def test_postgres_membership_revocation_invalidates_existing_token_access():
+    with SessionLocal() as db:
+        db.delete(db.get(Membership, ("pg-alice", "pg-company-a")))
+        db.commit()
+    response = client.get("/companies/pg-company-a/transactions", headers=auth("pg-alice"))
+    assert response.status_code == 404
+
+
+def test_postgres_role_change_is_enforced_on_next_request():
+    with SessionLocal() as db:
+        membership = db.get(Membership, ("pg-alice", "pg-company-a"))
+        membership.role = "read_only"
+        db.commit()
+    response = client.post("/companies/pg-company-a/transactions", headers=auth("pg-alice"), json={"description": "Denied after role change", "amount": "1.00"})
+    assert response.status_code == 403
+
+
+def test_postgres_audit_event_commits_with_transaction():
+    response = client.post("/companies/pg-company-a/transactions", headers=auth("pg-alice"), json={"description": "Audited PG transaction", "amount": "22.50"})
+    assert response.status_code == 201
+    with SessionLocal() as db:
+        events = db.query(AuditLog).filter_by(actor_user_id="pg-alice", company_id="pg-company-a", action="transaction.created").all()
+        assert len(events) == 1
+        assert events[0].entity_id == str(response.json()["id"])
+
