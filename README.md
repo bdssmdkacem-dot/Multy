@@ -83,6 +83,10 @@ Références officielles de départ :
 
 A first API slice now exists under `backend/main.py` using FastAPI and SQLAlchemy, with PostgreSQL schema in `backend/schema.sql`. It provides health, assigned-company listing, and tenant-scoped transaction list/create endpoints. The server checks a signed bearer JWT, then loads the active user and company membership from the database for each request; role claims from the token are not trusted. A user with `read_only` membership cannot create transactions. Registration and token issuance are deliberately not implemented.
 
+### PostgreSQL and live-container integration
+
+The `Multy PostgreSQL integration` workflow starts PostgreSQL 16, applies `backend/schema.sql`, runs the tenant-isolation suite against the real PostgreSQL engine, builds the API container, then launches it and tests the HTTP endpoints with a signed test token and seeded synthetic tenants. It verifies that the live API only lists the assigned company and returns 404 when the same user attempts to read another tenant. This is CI integration evidence, not a production deployment or an independent security audit.
+
 ### Run API tests
 
 ```bash
