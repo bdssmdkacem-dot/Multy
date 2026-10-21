@@ -57,8 +57,14 @@ def seed_postgres():
 
 
 def token(user_id: str, *, expired: bool = False) -> str:
-    exp = datetime.now(timezone.utc) - timedelta(minutes=1) if expired else datetime.now(timezone.utc) + timedelta(minutes=5)
-    return jwt.encode({"sub": user_id, "exp": exp}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256")
+    now = datetime.now(timezone.utc)
+    exp = now - timedelta(minutes=1) if expired else now + timedelta(minutes=5)
+    return jwt.encode(
+        {"sub": user_id, "iat": now - timedelta(minutes=2) if expired else now, "exp": exp,
+         "iss": "multy-api", "aud": "multy-client"},
+        os.environ["MULTY_JWT_SECRET"],
+        algorithm="HS256",
+    )
 
 
 def auth(user_id: str) -> dict:
