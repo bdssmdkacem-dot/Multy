@@ -29,10 +29,11 @@ Multy est actuellement un site vitrine et un tableau de bord interactif de démo
 - [ ] Ajouter une page tarifaire transparente et un formulaire de demande de démonstration.
 
 ### Phase 2 — première priorité : espace comptable multi-entreprises
-- [ ] Créer un espace de cabinet comptable capable de gérer plusieurs entreprises clientes depuis un seul compte professionnel.
-- [ ] Séparer strictement les données et documents de chaque entreprise ; aucune donnée ne doit être visible d'un autre client sans autorisation explicite.
+- [x] Ajouter un premier parcours visuel de portefeuille multi-entreprises dans la démo, avec sélection, recherche et ajout temporaire d'une entreprise fictive.
+- [ ] Construire l'espace de cabinet comptable persistant, capable de gérer plusieurs entreprises clientes depuis un compte professionnel.
+- [ ] Séparer strictement les données et documents de chaque entreprise côté serveur ; aucune donnée ne doit être visible d'un autre client sans autorisation explicite.
 - [ ] Ajouter l'invitation des collaborateurs, des rôles minimaux (administrateur du cabinet, collaborateur, lecture seule) et des autorisations par entreprise.
-- [ ] Prévoir une boîte de réception des pièces, leur classement, leur statut de revue et les demandes de documents manquants.
+- [ ] Prévoir une boîte de réception des pièces, leur classement, leur statut de revue et les demandes de documents manquants. Le panneau de démonstration actuel n'est pas un stockage documentaire.
 - [ ] Ajouter un journal d'audit consultable pour les accès et modifications importantes.
 - [ ] Tester les parcours avec au moins un comptable marocain avant de considérer le flux métier validé.
 
@@ -84,7 +85,7 @@ npx playwright install --with-deps chromium
 npm test
 ```
 
-Les tests actuels valident les principaux parcours du prototype dans Chromium desktop/mobile. Ils ne prouvent ni la sécurité d'une future API, ni la conformité fiscale, ni le bon fonctionnement sur tous les téléphones réels.
+Les tests actuels valident les principaux parcours du prototype dans Chromium desktop/mobile, dont la recherche et la sélection d'entreprises dans l'espace comptable de démonstration. Ils ne prouvent ni la sécurité d'une future API, ni la conformité fiscale, ni le bon fonctionnement sur tous les téléphones réels.
 
 **Ordre de livraison convenu :** avancer phase par phase, tester كل مرحلة قبل الانتقال إلى التالية، وتأجيل واجهات التسجيل وفتح الحسابات إلى المرحلة الأخيرة. هذا لا يعني تأجيل تصميم الأمان: يجب بناء صلاحيات وعزل بيانات آمنين قبل السماح بأي حسابات أو بيانات حقيقية.
 
