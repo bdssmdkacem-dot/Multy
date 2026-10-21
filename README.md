@@ -94,7 +94,7 @@ Migration `0003_append_only_audit` removes cascading foreign-key behavior from h
 - Every authenticated API request resolves the user from the database and rejects an inactive user, so disabling a user affects already-issued bearer tokens on the next request.
 - Company membership and role are read from the database for each company-scoped request. Removing membership denies the next request; changing a member to `read_only` blocks the next write without requiring a new token.
 - Creating a transaction and its `transaction.created` audit event happen in the same database transaction. The audit row stores actor, company, action, entity reference, currency metadata, and timestamp; it deliberately does not copy the transaction description or amount into the audit details.
-- The API currently has no endpoints for managing memberships or roles. Tests change those records directly in the test database to verify enforcement, not to claim a complete administration workflow. Audit rows are not exposed through an API, but production database privileges, retention, monitoring, and tamper-resistance still need a separate hardening review.
+- The API currently has no endpoints for managing memberships or roles. Tests change those records directly in the test database to verify enforcement, not to claim a complete administration workflow. Audit rows are not exposed through an API, and external immutable log retention is not implemented; production database privileges, retention, monitoring, and tamper-resistance still need a separate hardening review.
 
 ### PostgreSQL and live-container integration
 
@@ -118,7 +118,7 @@ docker compose -f docker-compose.api.yml up --build
 
 The local database port is bound to loopback only. Alembic revisions under `migrations/` are the canonical versioned schema path; the API container runs `alembic upgrade head` before starting. Existing databases previously initialized directly from `backend/schema.sql` need a reviewed baseline/adoption procedure before switching to Alembic. Do not use the sample environment for production.
 
-**Security boundary:** this is a backend foundation, not yet a production service. There is no login/token issuer, no account provisioning workflow, no HTTPS/reverse-proxy configuration, no rate limiting, no audit trail, no backup/restore drill, no migration runner, and the static dashboard is not connected to this API. Keep public registration closed and do not enter real customer or accounting data until deployment hardening and independent authorization/security tests pass.
+**Security boundary:** this is a backend foundation, not yet a production service. There is no login/token issuer, no account provisioning workflow, no production HTTPS/reverse-proxy configuration, no rate limiting, no external/immutable audit-log retention, no verified backup/restore drill, and the static dashboard is not connected to this API. The API container runs Alembic migrations at startup in the current prototype, but production migration ownership, least-privilege database roles, and rollout/rollback procedures are not yet established. JWT authentication now fails closed if the configured secret is shorter than 32 UTF-8 bytes; use a unique cryptographically random secret and never reuse CI values. Keep public registration closed and do not enter real customer or accounting data until deployment hardening and independent authorization/security tests pass.
 
 ## Développement et tests
 
