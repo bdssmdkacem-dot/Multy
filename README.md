@@ -1,55 +1,75 @@
-# Multy — Pilotage financier
+# Multy — Gestion financière pour le marché marocain
 
-Site vitrine responsive et prototype de tableau de bord financier pour petites entreprises.
+Multy est actuellement un site vitrine et un tableau de bord interactif de démonstration. Cette branche prépare l'adaptation du produit aux indépendants, commerçants et petites entreprises au Maroc.
 
-## Pages
+## État actuel — transparence
 
-- `index.html` : page d'accueil produit, fonctionnalités, aperçu du tableau de bord et FAQ.
-- `app.html` : tableau de bord interactif avec indicateurs, graphique SVG, comptes fictifs et dernières transactions.
+- Interface de présentation en français.
+- Exemples de montants affichés en dirhams (DH / MAD).
+- Tableau de bord avec données fictives, recherche, filtre de période, ajout temporaire et export CSV.
+- Publication statique possible avec GitHub Pages.
+- **Pas encore un logiciel commercial de gestion** : aucune authentification, base de données, sauvegarde durable, gestion multi-entreprise ou intégration bancaire.
+- Les chiffres et opérations de démonstration ne doivent pas être utilisés comme comptabilité réelle.
 
-## Fonctionnalités de la démo
+## Cible produit au Maroc
 
-- Interface française et mise en page adaptée au mobile.
-- Recherche instantanée dans les transactions.
-- Export CSV des transactions visibles.
-- Ajout local d'une opération de démonstration.
-- Sélection d'une période et navigation entre sections.
+1. Indépendants et auto-entrepreneurs.
+2. Commerçants et petites entreprises de services.
+3. TPE/PME qui ont besoin de suivre factures, dépenses, paiements et trésorerie.
+4. Parcours français et arabe, avec prise en charge correcte du RTL.
+5. Devise principale MAD / DH, dates et formats adaptés au contexte marocain.
 
-## Lancer le projet
+## Feuille de route commerciale
 
-Aucune dépendance applicative ni compilation n'est nécessaire pour le site lui-même. Pour le servir localement :
+### Phase 1 — adéquation au marché et UX
+- [x] Présenter clairement la cible marocaine et afficher les montants de démonstration en DH.
+- [ ] Compléter l'interface bilingue français/arabe et tester RTL sur mobile.
+- [ ] Revoir le parcours d'accueil, la navigation mobile et les appels à l'action avec des utilisateurs marocains.
+- [ ] Ajouter une page tarifaire transparente et un formulaire de demande de démonstration.
+
+### Phase 2 — fonctions métier
+- [ ] Profil d'entreprise et coordonnées configurables.
+- [ ] Clients, fournisseurs, produits/services et devis.
+- [ ] Création de factures PDF, avoirs, échéances et suivi des paiements.
+- [ ] Dépenses, catégories, justificatifs et rapports exportables.
+- [ ] Numérotation documentée, journal d'activité et archivage.
+- [ ] Règles de TVA configurables selon le régime applicable, sans supposer que tous les clients ont le même régime.
+
+### Phase 3 — plateforme fiable
+- [ ] Authentification et récupération de compte.
+- [ ] API et base de données persistante.
+- [ ] Isolation stricte des données entre entreprises et rôles d'équipe.
+- [ ] Validation côté serveur, limitation des tentatives, gestion sécurisée des secrets.
+- [ ] Sauvegardes testées, journalisation, supervision et procédure de restauration.
+- [ ] Tests d'accessibilité, de sécurité, de charge et d'utilisation sur appareils Android réels.
+
+### Phase 4 — lancement
+- [ ] Revue juridique et fiscale au Maroc avec un professionnel qualifié avant de présenter les documents comme conformes.
+- [ ] Évaluer les formalités applicables auprès de la CNDP au titre de la loi 09-08, notamment si des données personnelles sont traitées ou hébergées à l'étranger.
+- [ ] Conditions d'utilisation, politique de confidentialité, politique de conservation et suppression des données.
+- [ ] Choix du prestataire de paiement et validation des moyens de paiement disponibles au Maroc.
+- [ ] Offre d'essai, abonnements, facturation de l'abonnement et support client.
+- [ ] Pilote avec un petit groupe de professionnels marocains avant commercialisation publique.
+
+## Conformité — points à vérifier, pas une certification
+
+La configuration fiscale varie selon le statut et l'activité. Ne pas imposer un taux de TVA par défaut à tous les utilisateurs. La génération de factures destinées à un usage réel doit faire l'objet d'une validation fiscale et juridique locale. La loi marocaine 09-08 et les démarches CNDP applicables doivent être examinées avant de collecter des données personnelles en production.
+
+Références officielles de départ :
+- CNDP — loi 09-08 et obligations : https://www.cndp.ma/conditions/
+- CNDP — textes et lois : https://www.cndp.ma/textes-et-lois/
+- Ministère de l'Industrie et du Commerce — statut auto-entrepreneur : https://www.mcinet.gov.ma/fr/content/auto-entrepreneur
+
+## Développement et tests
 
 ```bash
-python3 -m http.server 8000
+npm install
+npx playwright install --with-deps chromium
+npm test
 ```
 
-Puis ouvrez http://localhost:8000. Le tableau de bord est accessible à `/app.html`.
+Les tests actuels valident les principaux parcours du prototype dans Chromium desktop/mobile. Ils ne prouvent ni la sécurité d'une future API, ni la conformité fiscale, ni le bon fonctionnement sur tous les téléphones réels.
 
-## Tests automatisés
+## Publication
 
-- `.github/workflows/validate.yml` vérifie la structure HTML, les titres, la langue et les identifiants.
-- `.github/workflows/browser-and-pages.yml` lance Playwright sur Chromium desktop et mobile : navigation, recherche, période, ajout local, export CSV, menu mobile et débordement horizontal.
-- Les rapports de workflow sont disponibles dans l'onglet Actions du dépôt.
-
-## Publication avec Vercel
-
-1. Connectez-vous à Vercel et choisissez **Add New → Project**.
-2. Importez le dépôt GitHub `bdssmdkacem-dot/Multy` et sélectionnez la branche `main`.
-3. Choisissez **Other** comme framework. Laissez la commande de build vide et le répertoire de sortie à la racine du dépôt (`.`) si ces paramètres sont demandés.
-4. Cliquez sur **Deploy**. Vercel doit publier `index.html` à la racine et le tableau de bord à `/app.html`.
-5. Après la première publication, les pushes sur `main` déclencheront normalement un nouveau déploiement. Les tests Playwright desktop/mobile restent exécutés par GitHub Actions, indépendamment de Vercel.
-
-L'importation initiale et les autorisations GitHub doivent être confirmés dans votre session Vercel. Le déploiement n'est confirmé que lorsque Vercel affiche **Ready** et fournit une URL.
-
-## Important
-
-Multy est un prototype original inspiré des usages courants des logiciels de gestion financière. Il ne reproduit pas le code, la marque, les textes propriétaires ou les ressources graphiques de Pennylane. Les données sont fictives : aucune banque, facture réelle ou API comptable n'est connectée. Les opérations ajoutées dans le prototype restent dans la session du navigateur et ne sont pas un registre comptable durable.
-
-## Avant une utilisation commerciale
-
-1. Revue visuelle sur appareils réels et correction des défauts constatés.
-2. Authentification, stockage durable, modèle de données et permissions.
-3. Gestion réelle des factures, dépenses, rapprochement bancaire et journal d'audit.
-4. API sécurisée, tests de sécurité, sauvegardes, conformité et politique de confidentialité.
-
-Le prototype ne doit pas être utilisé pour stocker ou traiter des données financières réelles.
+La branche `main` reste la version publiée. Les travaux de préparation commerciale sont isolés dans `commercial/morocco-foundation` pour revue et tests avant toute fusion.
