@@ -15,6 +15,23 @@ test('marketing page loads with working in-page navigation and dashboard links',
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
 });
 
+test('marketing navigation opens and closes accessibly on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const toggle = page.locator('#marketingMenuToggle');
+  const nav = page.locator('#marketingNav');
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(nav).not.toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(nav).toBeVisible();
+  await nav.getByRole('link', { name: 'Fonctionnalités' }).click();
+  await expect(page).toHaveURL(/#fonctionnalites$/);
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(nav).not.toBeVisible();
+});
+
 test('marketing page has no horizontal overflow', async ({ page }) => {
   await page.goto('/');
   const metrics = await page.evaluate(() => ({
