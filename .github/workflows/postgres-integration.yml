@@ -55,12 +55,28 @@ jobs:
         run: python -m pytest -q tests/test_postgres_api.py
       - name: Build API container image
         run: docker build -f Dockerfile.api -t multy-api:ci .
+      - name: Seed isolated live API smoke-test tenants
+        run: |
+          python - <<'PY'
+          import os
+          import psycopg
+          statements = [
+              "INSERT INTO firms (id, name) VALUES ('live-firm-a', 'CI Cabinet A'), ('live-firm-b', 'CI Cabinet B')",
+              "INSERT INTO users (id, email, active) VALUES ('live-user', 'live-user@example.test', true)",
+              "INSERT INTO companies (id, firm_id, name) VALUES ('live-company-a', 'live-firm-a', 'CI Company A'), ('live-company-b', 'live-firm-b', 'CI Company B')",
+              "INSERT INTO memberships (user_id, company_id, role) VALUES ('live-user', 'live-company-a', 'accountant')",
+              "INSERT INTO transactions (company_id, description, amount, currency) VALUES ('live-company-a', 'Visible CI invoice', 12.50, 'MAD'), ('live-company-b', 'Private CI invoice', 999.00, 'MAD')",
+          ]
+          with psycopg.connect(host="localhost", port=5432, dbname="multy_test", user="multy", password=os.environ["PGPASSWORD"]) as conn:
+              for statement in statements:
+                  conn.execute(statement)
+          PY
       - name: Start API container against PostgreSQL
         run: |
           docker run -d --name multy-api-ci --network host \
             -e DATABASE_URL=postgresql+psycopg://multy:test-only-password@127.0.0.1:5432/multy_test \
             -e MULTY_JWT_SECRET="$MULTY_JWT_SECRET" multy-api:ci
-      - name: Smoke-test live HTTP endpoints
+      - name: Smoke-test live HTTP endpoints and tenant isolation
         run: |
           for attempt in $(seq 1 20); do
             if curl --fail --silent http://127.0.0.1:8000/health; then
@@ -69,8 +85,21 @@ jobs:
             sleep 2
           done
           curl --fail --silent http://127.0.0.1:8000/health
-          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8000/companies)
-          test "$status" = "401"
+          TOKEN=$(python - <<'PY'
+          import os
+          from datetime import datetime, timedelta, timezone
+          import jwt
+          print(jwt.encode({"sub": "live-user", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256"))
+          PY
+          )
+          companies=$(curl --fail --silent -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8000/companies)
+          echo "$companies" | grep -q "live-company-a"
+          if echo "$companies" | grep -q "live-company-b"; then exit 1; fi
+          visible=$(curl --fail --silent -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8000/companies/live-company-a/transactions)
+          echo "$visible" | grep -q "Visible CI invoice"
+          if echo "$visible" | grep -q "Private CI invoice"; then exit 1; fi
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8000/companies/live-company-b/transactions)
+          test "$status" = "404"
       - name: Print API container logs on failure
         if: failure()
         run: docker logs multy-api-ci || true
