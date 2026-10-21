@@ -104,6 +104,8 @@ test('accountant workspace lists and filters client companies', async ({ page },
   await expect(page.locator('#accountantWorkspace')).toHaveClass(/active/);
   await expect(page.locator('#companyList .company-row:visible')).toHaveCount(3);
   await page.locator('#companyList .company-row[data-company="atlas"]').click();
+  await expect(page.locator('#companyList .company-row[data-company="atlas"]')).toHaveClass(/selected/);
+  await expect(page.locator('#companyList .company-row[data-company="atelier"]')).not.toHaveClass(/selected/);
   await expect(page.locator('#companyDetailName')).toHaveText('Atlas Distribution');
   await expect(page.locator('#companyDocs')).toHaveText('2');
   await page.locator('#companySearch').fill('Argan');
