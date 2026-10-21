@@ -6,9 +6,11 @@ test('published marketing page loads and dashboard entry point works', async ({ 
   await expect(page).toHaveTitle(/Multy/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('vision');
   await expect(page.locator('#fonctionnalites .feature')).toHaveCount(6);
-  await page.locator('a[href="app.html"]').first().click();
+  await page.locator('a.btn.primary[href="app.html"]').click();
   await expect(page).toHaveURL(/app\.html$/);
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
+  await expect(page.locator('body')).toContainText('Montants fictifs en DH');
+  await expect(page.locator('body')).not.toContainText('€');
 });
 
 test('published dashboard search and period controls are interactive', async ({ page }) => {
