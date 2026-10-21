@@ -33,8 +33,8 @@ CREATE INDEX IF NOT EXISTS ix_transactions_company_id ON transactions(company_id
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id bigserial PRIMARY KEY,
-    actor_user_id varchar(36) REFERENCES users(id) ON DELETE SET NULL,
-    company_id varchar(36) REFERENCES companies(id) ON DELETE SET NULL,
+    actor_user_id varchar(36),
+    company_id varchar(36),
     action varchar(80) NOT NULL,
     entity_type varchar(80) NOT NULL,
     entity_id varchar(80),
@@ -43,3 +43,14 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 CREATE INDEX IF NOT EXISTS ix_audit_logs_actor_user_id ON audit_logs(actor_user_id);
 CREATE INDEX IF NOT EXISTS ix_audit_logs_company_id ON audit_logs(company_id);
+
+-- Append-only audit protection. Migration 0003 is the canonical deployment path.
+CREATE OR REPLACE FUNCTION reject_audit_log_mutation() RETURNS trigger AS $$
+BEGIN
+    RAISE EXCEPTION 'audit_logs is append-only';
+END;
+$$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS audit_logs_append_only ON audit_logs;
+CREATE TRIGGER audit_logs_append_only
+BEFORE UPDATE OR DELETE ON audit_logs
+FOR EACH ROW EXECUTE FUNCTION reject_audit_log_mutation();
