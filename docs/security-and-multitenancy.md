@@ -6,6 +6,10 @@ Ce document fixe les critères à satisfaire avant de transformer le portefeuill
 
 Le produit actuel est un site statique : les entreprises et documents affichés sont des données fictives embarquées dans le navigateur. Il n'y a ni authentification, ni API, ni stockage persistant, ni contrôle d'accès côté serveur. **Ne jamais y déposer des données personnelles, comptables ou des documents réels.**
 
+## Premier jalon de code (non déployable)
+
+Le module `backend/access_policy.py` formalise une politique pure d'autorisation (administrateur de cabinet, comptable attribué à une entreprise, lecture seule) et `tests/test_access_policy.py` couvre notamment le refus inter-cabinets, les rôles inconnus et les mutations interdites. La CI exécute ces tests. Ce module n'est pas encore appelé par une API, ne charge pas d'identités depuis une base et ne protège donc pas les pages statiques. Il ne faut pas le présenter comme un contrôle d'accès actif.
+
 ## Modèle d'autorisation visé
 
 Les identifiants et relations sont générés et vérifiés côté serveur. Le navigateur ne peut jamais définir lui-même son identité, son rôle, son cabinet ou les entreprises auxquelles il a accès.
