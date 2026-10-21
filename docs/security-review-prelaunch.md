@@ -27,7 +27,8 @@ Cette revue est une inspection de code et des tests CI, pas un audit indépendan
 5. **Disponibilité et récupération** — pas de limitation de débit, de plan de réponse aux incidents ni de preuve d'exercice de restauration de sauvegarde. Définir aussi les délais de conservation et la suppression des données.
 6. **Déploiement** — l'API n'est pas déployée comme service de production et le tableau de bord statique n'est pas connecté à l'API. GitHub Pages ne fournit pas l'exécution de l'API.
 7. **Interface publiée** — le workflow Playwright teste le dépôt local dans Chromium desktop/mobile. Le déploiement Pages est volontairement limité à `main`; le succès des tests de branche ne prouve donc pas que la version publique correspond à ce commit. Faire une vérification visuelle et interactive sur l'URL publiée après un déploiement autorisé.
-8. **Confidentialité et conformité** — valider les obligations marocaines applicables, la résidence/transfert des données, les contrats, la politique de confidentialité et les règles de conservation avec des professionnels compétents.
+8. **Écart entre branche et site public (constaté le 2026-10-21)** — la capture Playwright du site public montre encore des montants en euros (€) et l'ancien en-tête « LE PILOTAGE FINANCIER, SANS COMPLEXITÉ », alors que la branche de travail cible le Maroc et le MAD/DH. Le premier test public a aussi échoué sur mobile car le sélecteur choisissait un lien de connexion caché au lieu du bouton visible; ce sélecteur a été corrigé. Le site public reste non conforme tant que la vérification relancée ne confirme pas le bon contenu marocain. Ne pas fusionner pour faire passer le test sans la revue d'acceptation demandée.
+9. **Confidentialité et conformité** — valider les obligations marocaines applicables, la résidence/transfert des données, les contrats, la politique de confidentialité et les règles de conservation avec des professionnels compétents.
 
 ## Résultats CI à distinguer
 
@@ -41,6 +42,6 @@ Les tests précédents sur le commit `045a2d495056` ont passé 15 tests PostgreS
 - [ ] Rôle runtime PostgreSQL à privilèges minimaux et rôle de migration séparé.
 - [ ] Export d'audit externe immuable, surveillance et procédures d'alerte testées.
 - [ ] Sauvegarde/restauration testée et migration/rollback documentés.
-- [ ] Vérification visuelle et interactive sur le site réellement publié.
+- [ ] Vérification visuelle et interactive sur le site réellement publié, y compris devise MAD/DH, absence de montants en euros, navigation mobile et interactions du tableau de bord.
 - [ ] Revue indépendante de sécurité et confidentialité terminée.
 - [ ] Aucune donnée réelle tant que tous les critères bloquants ne sont pas validés.
