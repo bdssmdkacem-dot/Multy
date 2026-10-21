@@ -187,4 +187,4 @@ def test_postgres_audit_rows_do_not_contain_financial_description_or_amount():
         details = db.execute(text("SELECT details::text FROM audit_logs WHERE action='transaction.created' AND company_id='pg-company-a'")).scalar_one()
         assert "Sensitive invoice text" not in details
         assert "321.45" not in details
-\n
+
