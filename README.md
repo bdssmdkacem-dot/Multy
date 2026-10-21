@@ -79,6 +79,30 @@ Références officielles de départ :
 - CNDP — textes et lois : https://www.cndp.ma/textes-et-lois/
 - Ministère de l'Industrie et du Commerce — statut auto-entrepreneur : https://www.mcinet.gov.ma/fr/content/auto-entrepreneur
 
+## Private pilot API foundation (not production-ready)
+
+A first API slice now exists under `backend/main.py` using FastAPI and SQLAlchemy, with PostgreSQL schema in `backend/schema.sql`. It provides health, assigned-company listing, and tenant-scoped transaction list/create endpoints. The server checks a signed bearer JWT, then loads the active user and company membership from the database for each request; role claims from the token are not trusted. A user with `read_only` membership cannot create transactions. Registration and token issuance are deliberately not implemented.
+
+### Run API tests
+
+```bash
+python -m pip install -r requirements.txt
+python -m pytest -q tests/test_api.py
+python -m unittest discover -s tests -p 'test_access_policy.py' -v
+```
+
+### Run a local PostgreSQL/API environment
+
+Set a strong, unique `POSTGRES_PASSWORD` and a separate random `MULTY_JWT_SECRET` in your shell environment, then run:
+
+```bash
+docker compose -f docker-compose.api.yml up --build
+```
+
+The local database port is bound to loopback only. The initial SQL schema is applied only when PostgreSQL initializes a fresh data volume; schema changes need a proper versioned migration process. Do not use the sample environment for production.
+
+**Security boundary:** this is a backend foundation, not yet a production service. There is no login/token issuer, no account provisioning workflow, no HTTPS/reverse-proxy configuration, no rate limiting, no audit trail, no backup/restore drill, no migration runner, and the static dashboard is not connected to this API. Keep public registration closed and do not enter real customer or accounting data until deployment hardening and independent authorization/security tests pass.
+
 ## Développement et tests
 
 ```bash
