@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install API test dependencies
+        run: pip install -r requirements.txt
       - name: Test server-side authorization policy
         run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Validate site pages
