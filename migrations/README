@@ -1,0 +1,9 @@
+# Database migrations
+
+Use Alembic to version schema changes. Do not edit an already-applied revision; add a new revision instead.
+
+- Apply: `alembic upgrade head`
+- Inspect current revision: `alembic current`
+- Preview pending SQL: `alembic upgrade head --sql`
+
+Run migrations with a deployment identity that can change schema, separate from the restricted application database identity in a hardened deployment. Take and verify a backup before production migrations. The initial revision targets a fresh database; it is not an automatic conversion of an existing database created directly from `backend/schema.sql`.
