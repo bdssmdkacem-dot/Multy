@@ -8,7 +8,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-os.environ["MULTY_JWT_SECRET"] = "test-secret-not-for-production"
+os.environ["MULTY_JWT_SECRET"] = "unit-test-secret-never-use-in-production-32bytes"
+import backend.main as main_module
 from backend.main import AuditLog, Base, Company, Firm, Membership, Transaction, User, app, get_db
 
 engine = create_engine(
@@ -97,6 +98,28 @@ def test_missing_invalid_and_expired_tokens_are_rejected():
     assert client.get("/companies", headers={"Authorization": "Bearer garbage"}).status_code == 401
     expired = jwt.encode({"sub": "alice", "exp": datetime.now(timezone.utc) - timedelta(minutes=1)}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256")
     assert client.get("/companies", headers={"Authorization": f"Bearer {expired}"}).status_code == 401
+
+
+def test_weak_jwt_secret_fails_closed(monkeypatch):
+    monkeypatch.setattr(main_module, "JWT_SECRET", "short")
+    response = client.get("/companies", headers=auth("alice"))
+    assert response.status_code == 503
+
+
+def test_unsigned_jwt_is_rejected():
+    unsigned = jwt.encode(
+        {"sub": "alice", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)},
+        key=None,
+        algorithm="none",
+    )
+    response = client.get("/companies", headers={"Authorization": f"Bearer {unsigned}"})
+    assert response.status_code == 401
+
+
+def test_jwt_missing_expiration_is_rejected():
+    missing_exp = jwt.encode({"sub": "alice"}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256")
+    response = client.get("/companies", headers={"Authorization": f"Bearer {missing_exp}"})
+    assert response.status_code == 401
 
 
 def test_deactivated_user_existing_token_is_rejected_immediately():
