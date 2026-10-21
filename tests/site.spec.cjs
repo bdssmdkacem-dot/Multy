@@ -8,7 +8,8 @@ test('marketing page loads with working in-page navigation and dashboard links',
   await expect(page.locator('.dash')).toContainText('DH');
   await page.getByRole('link', { name: /Voir les fonctionnalités/i }).click();
   await expect(page).toHaveURL(/#fonctionnalites$/);
-  await expect(page.locator('#fonctionnalites .feature')).toHaveCount(6);
+  await expect(page.locator('#fonctionnalites .feature')).toHaveCount(7);
+  await expect(page.locator('#fonctionnalites')).toContainText('cabinets comptables');
   await page.getByRole('link', { name: /Ouvrir le tableau de bord/i }).click();
   await expect(page).toHaveURL(/app\.html$/);
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
