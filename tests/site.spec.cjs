@@ -21,6 +21,7 @@ test('marketing navigation opens and closes accessibly on mobile', async ({ page
   const toggle = page.locator('#marketingMenuToggle');
   const nav = page.locator('#marketingNav');
   await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-controls', 'marketingNav');
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await expect(nav).not.toBeVisible();
   await toggle.click();
