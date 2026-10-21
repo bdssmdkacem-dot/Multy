@@ -4,6 +4,8 @@ test('marketing page loads with working in-page navigation and dashboard links',
   await page.goto('/');
   await expect(page).toHaveTitle(/Multy/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('vision');
+  await expect(page.locator('body')).toContainText('AU MAROC');
+  await expect(page.locator('.dash')).toContainText('DH');
   await page.getByRole('link', { name: /Voir les fonctionnalités/i }).click();
   await expect(page).toHaveURL(/#fonctionnalites$/);
   await expect(page.locator('#fonctionnalites .feature')).toHaveCount(6);
@@ -81,4 +83,13 @@ test('dashboard has no horizontal page overflow', async ({ page }) => {
     content: document.documentElement.scrollWidth
   }));
   expect(metrics.content).toBeLessThanOrEqual(metrics.viewport);
+});
+
+test('Moroccan demo uses dirhams and clearly discloses demo status', async ({ page }) => {
+  await page.goto('/app.html');
+  await expect(page.locator('body')).toContainText('Montants fictifs en DH');
+  await expect(page.locator('body')).not.toContainText('€');
+  await page.locator('#newBtn').click();
+  page.once('dialog', dialog => dialog.dismiss());
+  await expect(page.locator('#toast')).toBeHidden();
 });
