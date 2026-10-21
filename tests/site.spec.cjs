@@ -89,7 +89,9 @@ test('Moroccan demo uses dirhams and clearly discloses demo status', async ({ pa
   await page.goto('/app.html');
   await expect(page.locator('body')).toContainText('Montants fictifs en DH');
   await expect(page.locator('body')).not.toContainText('€');
+  page.once('dialog', async dialog => {
+    expect(dialog.message()).toContain('Fournisseur');
+    await dialog.dismiss();
+  });
   await page.locator('#newBtn').click();
-  page.once('dialog', dialog => dialog.dismiss());
-  await expect(page.locator('#toast')).toBeHidden();
 });
