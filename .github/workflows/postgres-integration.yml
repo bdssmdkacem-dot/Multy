@@ -40,8 +40,10 @@ jobs:
           import os
           from pathlib import Path
           import psycopg
+          statements = [part.strip() for part in Path("backend/schema.sql").read_text().split(";") if part.strip()]
           with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
-              conn.execute(Path("backend/schema.sql").read_text())
+              for statement in statements:
+                  conn.execute(statement)
           PY
       - name: Test API against real PostgreSQL
         run: python -m pytest -q tests/test_postgres_api.py
