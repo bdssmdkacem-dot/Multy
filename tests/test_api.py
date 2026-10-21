@@ -56,7 +56,12 @@ def clean_db():
 
 
 def token(user_id: str) -> str:
-    return jwt.encode({"sub": user_id, "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256")
+    now = datetime.now(timezone.utc)
+    return jwt.encode(
+        {"sub": user_id, "iat": now, "exp": now + timedelta(minutes=5), "iss": "multy-api", "aud": "multy-client"},
+        os.environ["MULTY_JWT_SECRET"],
+        algorithm="HS256",
+    )
 
 
 def auth(user_id: str) -> dict:
@@ -120,6 +125,35 @@ def test_jwt_missing_expiration_is_rejected():
     missing_exp = jwt.encode({"sub": "alice"}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256")
     response = client.get("/companies", headers={"Authorization": f"Bearer {missing_exp}"})
     assert response.status_code == 401
+
+
+def test_jwt_wrong_issuer_or_audience_is_rejected():
+    now = datetime.now(timezone.utc)
+    base = {"sub": "alice", "iat": now, "exp": now + timedelta(minutes=5)}
+    wrong_issuer = jwt.encode({**base, "iss": "other-api", "aud": "multy-client"}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256")
+    wrong_audience = jwt.encode({**base, "iss": "multy-api", "aud": "other-client"}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256")
+    assert client.get("/companies", headers={"Authorization": f"Bearer {wrong_issuer}"}).status_code == 401
+    assert client.get("/companies", headers={"Authorization": f"Bearer {wrong_audience}"}).status_code == 401
+
+
+def test_jwt_lifetime_over_15_minutes_is_rejected():
+    now = datetime.now(timezone.utc)
+    long_lived = jwt.encode(
+        {"sub": "alice", "iat": now, "exp": now + timedelta(hours=1), "iss": "multy-api", "aud": "multy-client"},
+        os.environ["MULTY_JWT_SECRET"],
+        algorithm="HS256",
+    )
+    assert client.get("/companies", headers={"Authorization": f"Bearer {long_lived}"}).status_code == 401
+
+
+def test_jwt_wrong_algorithm_is_rejected():
+    now = datetime.now(timezone.utc)
+    token_wrong_algorithm = jwt.encode(
+        {"sub": "alice", "iat": now, "exp": now + timedelta(minutes=5), "iss": "multy-api", "aud": "multy-client"},
+        os.environ["MULTY_JWT_SECRET"],
+        algorithm="HS384",
+    )
+    assert client.get("/companies", headers={"Authorization": f"Bearer {token_wrong_algorithm}"}).status_code == 401
 
 
 def test_deactivated_user_existing_token_is_rejected_immediately():
