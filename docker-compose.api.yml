@@ -1,3 +1,6 @@
+# Local development only. This compose file uses the bootstrap PostgreSQL account
+# for migrations and API access; do not use it as a production deployment.
+# Production must separate a least-privilege runtime role from a migration owner.
 services:
   db:
     image: postgres:16-alpine
