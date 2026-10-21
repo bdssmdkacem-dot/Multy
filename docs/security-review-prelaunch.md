@@ -36,7 +36,7 @@ Les tests précédents sur le commit `045a2d495056` ont passé 15 tests PostgreS
 ## Critères de sortie
 
 - [ ] Tests CI verts sur le HEAD actuel.
-- [ ] Tests JWT couvrant secret faible, signature incorrecte, algorithme non autorisé, expiration et claims invalides.
+- [ ] Tests JWT couvrant secret faible, signature incorrecte, algorithme non autorisé, expiration, issuer/audience incorrects et durée de vie excessive.
 - [ ] Matrice d'autorisation exhaustive pour chaque route et chaque rôle.
 - [ ] Rôle runtime PostgreSQL à privilèges minimaux et rôle de migration séparé.
 - [ ] Export d'audit externe immuable, surveillance et procédures d'alerte testées.
