@@ -29,23 +29,25 @@ def seed_postgres():
     # This suite intentionally targets PostgreSQL, not the SQLite unit-test database.
     with SessionLocal() as db:
         db.execute(text("TRUNCATE TABLE transactions, memberships, companies, users, firms RESTART IDENTITY CASCADE"))
-        db.execute(text("""
-            INSERT INTO firms (id, name) VALUES ('pg-firm-a', 'Cabinet A'), ('pg-firm-b', 'Cabinet B');
-            INSERT INTO users (id, email, active) VALUES
-              ('pg-alice', 'alice-pg@example.test', true),
-              ('pg-bob', 'bob-pg@example.test', true),
-              ('pg-reader', 'reader-pg@example.test', true);
-            INSERT INTO companies (id, firm_id, name) VALUES
-              ('pg-company-a', 'pg-firm-a', 'Atelier Nova'),
-              ('pg-company-b', 'pg-firm-b', 'Atlas Distribution');
-            INSERT INTO memberships (user_id, company_id, role) VALUES
-              ('pg-alice', 'pg-company-a', 'accountant'),
-              ('pg-bob', 'pg-company-b', 'accountant'),
-              ('pg-reader', 'pg-company-a', 'read_only');
-            INSERT INTO transactions (company_id, description, amount, currency) VALUES
-              ('pg-company-a', 'Invoice A', 125.00, 'MAD'),
-              ('pg-company-b', 'Private invoice B', 999.00, 'MAD');
-        """))
+        statements = [
+            "INSERT INTO firms (id, name) VALUES ('pg-firm-a', 'Cabinet A'), ('pg-firm-b', 'Cabinet B')",
+            """INSERT INTO users (id, email, active) VALUES
+                ('pg-alice', 'alice-pg@example.test', true),
+                ('pg-bob', 'bob-pg@example.test', true),
+                ('pg-reader', 'reader-pg@example.test', true)""",
+            """INSERT INTO companies (id, firm_id, name) VALUES
+                ('pg-company-a', 'pg-firm-a', 'Atelier Nova'),
+                ('pg-company-b', 'pg-firm-b', 'Atlas Distribution')""",
+            """INSERT INTO memberships (user_id, company_id, role) VALUES
+                ('pg-alice', 'pg-company-a', 'accountant'),
+                ('pg-bob', 'pg-company-b', 'accountant'),
+                ('pg-reader', 'pg-company-a', 'read_only')""",
+            """INSERT INTO transactions (company_id, description, amount, currency) VALUES
+                ('pg-company-a', 'Invoice A', 125.00, 'MAD'),
+                ('pg-company-b', 'Private invoice B', 999.00, 'MAD')""",
+        ]
+        for statement in statements:
+            db.execute(text(statement))
         db.commit()
     yield
     with SessionLocal() as db:
