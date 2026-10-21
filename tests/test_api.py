@@ -101,7 +101,13 @@ def test_read_only_cannot_create_transaction():
 def test_missing_invalid_and_expired_tokens_are_rejected():
     assert client.get("/companies").status_code == 401
     assert client.get("/companies", headers={"Authorization": "Bearer garbage"}).status_code == 401
-    expired = jwt.encode({"sub": "alice", "exp": datetime.now(timezone.utc) - timedelta(minutes=1)}, os.environ["MULTY_JWT_SECRET"], algorithm="HS256")
+    now = datetime.now(timezone.utc)
+    expired = jwt.encode(
+        {"sub": "alice", "iat": now - timedelta(minutes=2), "exp": now - timedelta(minutes=1),
+         "iss": "multy-api", "aud": "multy-client"},
+        os.environ["MULTY_JWT_SECRET"],
+        algorithm="HS256",
+    )
     assert client.get("/companies", headers={"Authorization": f"Bearer {expired}"}).status_code == 401
 
 
