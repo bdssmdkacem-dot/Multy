@@ -109,14 +109,16 @@ def authenticated_user(
     authorization: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ) -> User:
-    if not JWT_SECRET:
-        raise HTTPException(status_code=503, detail="Authentication is not configured")
+    if len(JWT_SECRET.encode("utf-8")) < 32:
+        raise HTTPException(status_code=503, detail="Authentication secret is not configured securely")
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Bearer token required", headers={"WWW-Authenticate": "Bearer"})
     token = authorization[7:].strip()
     try:
         claims = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], options={"require": ["sub", "exp"]})
         user_id = claims["sub"]
+        if not isinstance(user_id, str) or not user_id:
+            raise jwt.InvalidTokenError("Invalid subject")
     except (jwt.InvalidTokenError, KeyError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid or expired token", headers={"WWW-Authenticate": "Bearer"})
     user = db.get(User, user_id)
