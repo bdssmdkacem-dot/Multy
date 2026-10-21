@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 os.environ.setdefault("MULTY_JWT_SECRET", "postgres-test-secret-not-for-production")
-from backend.main import AuditLog, Membership, SessionLocal, app, get_db
+from backend.main import AuditLog, Membership, SessionLocal, User, app, get_db
 
 client = TestClient(app)
 
@@ -124,4 +124,12 @@ def test_postgres_audit_event_commits_with_transaction():
         events = db.query(AuditLog).filter_by(actor_user_id="pg-alice", company_id="pg-company-a", action="transaction.created").all()
         assert len(events) == 1
         assert events[0].entity_id == str(response.json()["id"])
+
+def test_postgres_deactivation_rejects_previously_issued_token():
+    existing_token = auth("pg-alice")
+    with SessionLocal() as db:
+        db.get(User, "pg-alice").active = False
+        db.commit()
+    response = client.get("/companies", headers=existing_token)
+    assert response.status_code == 401
 
