@@ -46,15 +46,20 @@ Multy est actuellement un site vitrine et un tableau de bord interactif de démo
 - [ ] Numérotation documentée, journal d'activité et archivage.
 - [ ] Règles de TVA configurables selon le régime applicable, sans supposer que tous les clients ont le même régime.
 
-### Phase 4 — plateforme fiable
-- [ ] Authentification et récupération de compte.
-- [ ] API et base de données persistante.
-- [ ] Isolation stricte des données entre entreprises et rôles d'équipe.
-- [ ] Validation côté serveur, limitation des tentatives, gestion sécurisée des secrets.
-- [ ] Sauvegardes testées, journalisation, supervision et procédure de restauration.
-- [ ] Tests d'accessibilité, de sécurité, de charge et d'utilisation sur appareils Android réels.
+### Phase 4 — infrastructure et fiabilité (avant d'ouvrir les inscriptions)
+- [ ] API et base de données persistante, d'abord sur un environnement de test.
+- [ ] Modèle de données multi-entreprises et séparation vérifiable des données.
+- [ ] Validation côté serveur, gestion sécurisée des secrets, journalisation et sauvegardes.
+- [ ] Tests d'autorisation et de sécurité sur les scénarios d'accès inter-entreprises.
+- [ ] Tests d'accessibilité, de charge et d'utilisation sur appareils Android réels.
 
-### Phase 5 — lancement
+### Phase 5 — inscription et ouverture des comptes (dernière grande étape produit)
+- [ ] Concevoir puis tester l'inscription, la connexion, la vérification de l'adresse e-mail et la récupération de compte.
+- [ ] Activer les rôles et autorisations côté serveur avant toute utilisation de données réelles.
+- [ ] Tester les parcours d'inscription et de connexion sur mobile, les erreurs, les sessions et la récupération de compte.
+- [ ] Ouvrir les inscriptions uniquement après revue de sécurité, confidentialité et restauration des sauvegardes.
+
+### Phase 6 — lancement
 - [ ] Revue juridique et fiscale au Maroc avec un professionnel qualifié avant de présenter les documents comme conformes.
 - [ ] Évaluer les formalités applicables auprès de la CNDP au titre de la loi 09-08, notamment si des données personnelles sont traitées ou hébergées à l'étranger.
 - [ ] Conditions d'utilisation, politique de confidentialité, politique de conservation et suppression des données.
@@ -80,6 +85,8 @@ npm test
 ```
 
 Les tests actuels valident les principaux parcours du prototype dans Chromium desktop/mobile. Ils ne prouvent ni la sécurité d'une future API, ni la conformité fiscale, ni le bon fonctionnement sur tous les téléphones réels.
+
+**Ordre de livraison convenu :** avancer phase par phase, tester كل مرحلة قبل الانتقال إلى التالية، وتأجيل واجهات التسجيل وفتح الحسابات إلى المرحلة الأخيرة. هذا لا يعني تأجيل تصميم الأمان: يجب بناء صلاحيات وعزل بيانات آمنين قبل السماح بأي حسابات أو بيانات حقيقية.
 
 ## Publication
 
