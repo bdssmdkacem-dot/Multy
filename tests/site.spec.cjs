@@ -82,3 +82,45 @@ test('dashboard has no horizontal page overflow', async ({ page }) => {
   }));
   expect(metrics.content).toBeLessThanOrEqual(metrics.viewport);
 });
+
+test('invoice draft page keeps client-side HT, tax, and TTC previews in sync', async ({ page }, testInfo) => {
+  await page.route('**/supabase-config.js', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: 'window.MULTY_SUPABASE_CONFIG = {};'
+  }));
+  await page.goto('./facturation.html');
+  await expect(page.getByRole('heading', { level: 1, name: 'Facturation' })).toBeVisible();
+  await expect(page.locator('#setupGate')).toBeVisible();
+  // This UI-only test bypasses the authentication overlay; it does not submit live data.
+  await page.locator('#setupGate').evaluate(el => { el.hidden = true; });
+  await page.locator('.line .desc').fill('Prestation de test');
+  await page.locator('.line .qty').fill('2');
+  await page.locator('.line .price').fill('50');
+  await page.locator('.line .rate').fill('10');
+  await expect(page.locator('#subtotal')).toContainText('100,00');
+  await expect(page.locator('#taxTotal')).toContainText('10,00');
+  await expect(page.locator('#grandTotal')).toContainText('110,00');
+  await page.locator('#addLine').click();
+  await expect(page.locator('#lineRows .line')).toHaveCount(2);
+  await page.locator('#lineRows .line').nth(1).getByRole('button', { name: 'Supprimer la ligne' }).click();
+  await expect(page.locator('#lineRows .line')).toHaveCount(1);
+  const width = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+  expect(width.content).toBeLessThanOrEqual(width.viewport);
+});
+
+test('expense entry page renders its fields and fits mobile width', async ({ page }) => {
+  await page.route('**/supabase-config.js', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: 'window.MULTY_SUPABASE_CONFIG = {};'
+  }));
+  await page.goto('./depenses.html');
+  await expect(page.getByRole('heading', { level: 1, name: 'Suivi des dépenses' })).toBeVisible();
+  await expect(page.locator('#gate')).toBeVisible();
+  await expect(page.locator('#vendor')).toBeVisible();
+  await expect(page.locator('#description')).toBeVisible();
+  await expect(page.locator('#category')).toBeVisible();
+  await expect(page.locator('#date')).toBeVisible();
+  await expect(page.locator('#amount')).toBeVisible();
+  const width = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+  expect(width.content).toBeLessThanOrEqual(width.viewport);
+});
