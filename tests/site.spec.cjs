@@ -157,3 +157,18 @@ test('accountant can review demo documents and filter by status', async ({ page 
   await expect(page.locator('#documentList .document-row')).toHaveCount(1);
   await expect(page.locator('#documentList .document-row').first()).toContainText('Justificatif de paiement');
 });
+
+test('account page exposes signup/login modes and fails closed until Supabase is configured', async ({ page }) => {
+  await page.goto('./auth.html');
+  await expect(page).toHaveTitle(/Compte Multy/);
+  await expect(page.getByRole('heading', { name: 'Créer votre compte' })).toBeVisible();
+  await expect(page.locator('#firmName')).toBeVisible();
+  await page.locator('#loginTab').click();
+  await expect(page.getByRole('heading', { name: 'Bon retour' })).toBeVisible();
+  await expect(page.locator('#firmName')).toBeHidden();
+  await page.locator('#email').fill('test@example.com');
+  await page.locator('#password').fill('test-password-long');
+  await page.locator('#submitBtn').click();
+  await expect(page.locator('#message')).toContainText('Supabase n’est pas encore configuré');
+  await expect(page.locator('#message')).toHaveClass(/error/);
+});
