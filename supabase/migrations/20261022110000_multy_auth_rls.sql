@@ -140,7 +140,7 @@ create policy firms_read_members on public.firms for select to authenticated
 using (exists (select 1 from public.firm_members m where m.firm_id = id and m.user_id = (select auth.uid())));
 
 create policy firm_members_read_same_firm on public.firm_members for select to authenticated
-using (exists (select 1 from public.firm_members own where own.firm_id = firm_members.firm_id and own.user_id = (select auth.uid())));
+using (user_id = (select auth.uid())); -- Team directory access is withheld until a non-recursive membership helper is deployed.
 
 create policy companies_read_member_firm on public.companies for select to authenticated
 using (exists (select 1 from public.firm_members m where m.firm_id = companies.firm_id and m.user_id = (select auth.uid())));
