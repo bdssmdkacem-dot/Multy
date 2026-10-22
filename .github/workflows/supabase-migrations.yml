@@ -6,6 +6,9 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'tests/supabase-migration-smoke.sql'
+      - 'supabase/diagnostics/**'
+      - 'docs/supabase-existing-project-preflight.md'
+      - 'README.md'
       - '.github/workflows/supabase-migrations.yml'
   pull_request:
     branches: [main]
@@ -86,3 +89,5 @@ jobs:
           done
       - name: Verify invoice totals, expense columns, RLS, and cross-tenant isolation
         run: psql "$DATABASE_URL" --set ON_ERROR_STOP=1 --file tests/supabase-migration-smoke.sql
+      - name: Validate the read-only existing-project preflight on the CI schema
+        run: psql "$DATABASE_URL" --set ON_ERROR_STOP=1 --file supabase/diagnostics/20261022_live_schema_preflight.sql
