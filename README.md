@@ -11,7 +11,7 @@ Multy est actuellement un site vitrine et un tableau de bord interactif de démo
 - **Pas encore un logiciel commercial de gestion** : aucune authentification, base de données, sauvegarde durable, gestion multi-entreprise ou intégration bancaire.
 - Les chiffres et opérations de démonstration ne doivent pas être utilisés comme comptabilité réelle.
 
-## Cible produit au Maroc
+## Supabase — intégration en préparation\n\n- [x] Ajouter une page d’inscription/connexion et un modèle initial PostgreSQL avec RLS sur la branche de travail.\n- [ ] Renseigner l’URL Supabase et la clé publishable du projet de test dans `supabase-config.js`.\n- [ ] Appliquer `supabase/migrations/20261022110000_multy_auth_rls.sql` et vérifier les politiques avec deux utilisateurs de test.\n- [ ] Finaliser confirmation e-mail, récupération de compte, SMTP et tests d’isolation.\n- [ ] Connecter le tableau de bord aux données persistantes avant toute utilisation réelle.\n\nLa page d’authentification ne fonctionne pas tant que le projet Supabase n’est pas configuré. Ne jamais placer une clé `service_role` dans le site statique. Détails : `docs/supabase-setup.md`.\n\n## Cible produit au Maroc
 
 1. Indépendants et auto-entrepreneurs.
 2. Commerçants et petites entreprises de services.
