@@ -56,7 +56,7 @@
     $('submitBtn').disabled=true;
     try {
       if(mode==='signup') {
-        const {data,error}=await client.auth.signUp({email,password,options:{data:{display_name:$('displayName').value.trim()},emailRedirectTo:new URL('./app.html',location.href).href}});
+        const {data,error}=await client.auth.signUp({email,password,options:{data:{display_name:$('displayName').value.trim()},emailRedirectTo:new URL('./auth.html',location.href).href}});
         if(error) throw error;
         if(!data.user) throw new Error('Le compte n’a pas pu être créé.');
         if(!data.session) {
@@ -86,7 +86,44 @@
       message(text.length>240?text.slice(0,240):text,'error');
     } finally { $('submitBtn').disabled=false; }
   });
+  async function finishConfirmedSession() {
+    const cfg=window.MULTY_SUPABASE_CONFIG;
+    if (!window.supabase || !cfg || !cfg.url || !cfg.publishableKey) return;
+    const client=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+    const {data:{session},error}=await client.auth.getSession();
+    if(error || !session) return;
+    try {
+      const {data: memberships,error: membershipError}=await client.from('firm_members').select('firm_id').limit(1);
+      if(membershipError) throw membershipError;
+      if(memberships && memberships.length) {
+        message('Adresse confirmée. Vous êtes connecté ; le tableau de bord reste une démo locale.','success');
+        loginTab.click();
+        return;
+      }
+      message('Adresse confirmée. Saisissez le nom du cabinet ou de votre entreprise pour terminer la création de votre espace.','success');
+      signupTab.click();
+      $('displayName').required=false; $('displayName').value=session.user.user_metadata?.display_name||'';
+      $('firmName').required=true;
+      $('firmName').focus();
+      $('submitBtn').textContent='Créer mon espace';
+      form.addEventListener('submit', async function provisionAfterConfirm(event) {
+        if (mode !== 'signup') return;
+        event.preventDefault();
+        const firmName=$('firmName').value.trim();
+        if(firmName.length<2 || firmName.length>180) { message('Le nom doit contenir entre 2 et 180 caractères.'); return; }
+        $('submitBtn').disabled=true;
+        try {
+          const {error: createError}=await client.rpc('create_initial_firm',{p_name:firmName});
+          if(createError) throw createError;
+          message('Espace créé. Le tableau de bord reste une démo et ne stocke pas encore les transactions dans Supabase.','success');
+          setTimeout(()=>location.href='./app.html',900);
+        } catch(err) { message(String(err?.message||'Impossible de créer cet espace.').slice(0,240)); }
+        finally { $('submitBtn').disabled=false; }
+      },{once:true});
+    } catch(err) { message(String(err?.message||'Impossible de vérifier le compte.').slice(0,240)); }
+  }
   setMode('signup');
+  finishConfirmedSession();
 })();
 </script>
 </body>
