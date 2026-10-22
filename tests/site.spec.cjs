@@ -158,7 +158,7 @@ test('accountant can review demo documents and filter by status', async ({ page 
   await expect(page.locator('#documentList .document-row').first()).toContainText('Justificatif de paiement');
 });
 
-test('account page exposes signup/login modes and fails closed until Supabase is configured', async ({ page }) => {
+test('account page exposes signup/login modes and has public Supabase configuration', async ({ page }) => {
   await page.goto('./auth.html');
   await expect(page).toHaveTitle(/Compte Multy/);
   await expect(page.getByRole('heading', { name: 'Créer votre compte' })).toBeVisible();
@@ -166,9 +166,8 @@ test('account page exposes signup/login modes and fails closed until Supabase is
   await page.locator('#loginTab').click();
   await expect(page.getByRole('heading', { name: 'Bon retour' })).toBeVisible();
   await expect(page.locator('#firmName')).toBeHidden();
-  await page.locator('#email').fill('test@example.com');
-  await page.locator('#password').fill('test-password-long');
-  await page.locator('#submitBtn').click();
-  await expect(page.locator('#message')).toContainText('Supabase n’est pas encore configuré');
-  await expect(page.locator('#message')).toHaveClass(/error/);
+  const config = await page.evaluate(() => window.MULTY_SUPABASE_CONFIG);
+  expect(config.url).toBe('https://abxapmbiuijaybwddvrw.supabase.co');
+  expect(config.publishableKey).toMatch(/^sb_publishable_/);
+  expect(config.publishableKey).not.toContain('sb_secret');
 });
