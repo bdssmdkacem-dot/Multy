@@ -41,6 +41,17 @@ Puis ouvrez http://localhost:8000. Le tableau de bord est accessible à `/app.ht
 
 L'importation initiale et les autorisations GitHub doivent être confirmés dans votre session Vercel. Le déploiement n'est confirmé que lorsque Vercel affiche **Ready** et fournit une URL.
 
+## Supabase setup (optional live mode)
+
+The default dashboard remains a fictitious demo. To enable authenticated MAD transactions:
+
+1. Create a Supabase project and apply the SQL files in `supabase/migrations/` in filename order.
+2. Enable email/password sign-in in Supabase Auth. Configure email confirmation as desired.
+3. Set `url` and the public anon/publishable `anonKey` in `supabase-config.js`. This key is intended for browser clients; never put a `service_role` key in the site.
+4. Serve the site over HTTP(S), open `/app.html`, create an account, then enter a cabinet and company name.
+
+The initial firm, membership, company and audit event are created in one database transaction. Live transaction rows use MAD and are isolated by the existing row-level security policies. The live balance is the net of recorded transactions only; this prototype does not model bank balances, invoices or a complete accounting ledger.
+
 ## Important
 
 Multy est un prototype original inspiré des usages courants des logiciels de gestion financière. Il ne reproduit pas le code, la marque, les textes propriétaires ou les ressources graphiques de Pennylane. Les données sont fictives : aucune banque, facture réelle ou API comptable n'est connectée. Les opérations ajoutées dans le prototype restent dans la session du navigateur et ne sont pas un registre comptable durable.
