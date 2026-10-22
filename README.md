@@ -7,6 +7,7 @@ Site vitrine responsive et prototype de tableau de bord financier pour petites e
 - `index.html` : page d'accueil produit, fonctionnalités, aperçu du tableau de bord et FAQ.
 - `app.html` : tableau de bord interactif avec transactions, connexion Supabase facultative et devise MAD.
 - `facturation.html` : première interface de brouillons de factures, disponible après configuration Supabase et connexion.
+- `depenses.html` : suivi des dépenses en MAD dans le registre commun des transactions.
 
 ## Fonctionnalités de la démo
 
@@ -15,6 +16,7 @@ Site vitrine responsive et prototype de tableau de bord financier pour petites e
 - Export CSV des transactions visibles.
 - Ajout local d'une opération de démonstration.
 - Préparation de brouillons de factures avec lignes, ICE/IF client, échéance et calculs HT/TVA/TTC en MAD quand Supabase est configuré.
+- Enregistrement des dépenses fournisseur par date et catégorie, visibles aussi dans le registre global quand Supabase est configuré.
 - Sélection d'une période et navigation entre sections.
 
 ## Lancer le projet
@@ -52,7 +54,7 @@ The default dashboard remains a fictitious demo. To enable authenticated MAD tra
 3. The project URL and public publishable key are configured in `supabase-config.js`. This key is intended for browser clients; never put a `service_role` key in the site. Open `/app.html?mode=live` to use Supabase; `/app.html` keeps the interactive demo available.
 4. Serve the site over HTTP(S), open `/app.html`, create an account, then enter a cabinet and company name.
 
-The initial firm, membership, company and audit event are created in one database transaction. Live transaction rows use MAD and are isolated by row-level security. The invoice draft RPC stores customer details and line totals atomically and limits writes to firm administrators and accountants. Drafts are deliberately unnumbered. They cannot be issued, sent, or treated as compliant invoices. VAT settings and mandatory invoice details must be validated with a Moroccan accountant and current official requirements before issuing real documents. The live balance is the net of recorded transactions only; this prototype does not model bank balances or a complete accounting ledger.
+The initial firm, membership, company and audit event are created in one database transaction. Live transaction rows use MAD and are isolated by row-level security. The invoice draft RPC stores customer details and line totals atomically and limits writes to firm administrators and accountants. Drafts are deliberately unnumbered. They cannot be issued, sent, or treated as compliant invoices. VAT settings and mandatory invoice details must be validated with a Moroccan accountant and current official requirements before issuing real documents. Expense entries are written to the same transaction ledger and included in the net transaction balance. The live balance does not represent bank balances; this prototype has no bank feed, receipt capture, approvals, reconciliation, or complete accounting ledger.
 
 ## Important
 
