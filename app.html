@@ -69,7 +69,7 @@ $('#notify').addEventListener('click',()=>toast('Vous êtes à jour — aucune n
 $('#moreCash').addEventListener('click',()=>toast('Les détails de trésorerie sont affichés dans ce prototype.'));
 })();
 </script>
-<script src="supabase-config.js"></script><script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script>
 (()=>{const cfg=window.MULTY_SUPABASE_CONFIG||{};if(!cfg.url||!cfg.anonKey)return;
 const gate=document.querySelector('#authGate'),form=document.querySelector('#authForm'),switcher=document.querySelector('#authSwitch'),fields=document.querySelector('#workspaceFields');
 gate.hidden=false;let client,signUp=false,companyId=null;
@@ -80,10 +80,13 @@ function setMode(next){signUp=next;fields.hidden=!next;document.querySelector('#
 switcher.addEventListener('click',()=>setMode(!signUp));
 function showGate(){gate.hidden=false;document.body.classList.remove('live-mode')}
 async function openWorkspace(){const {data:{user}}=await client.auth.getUser();if(!user){showGate();return}
-const {data:members,error:memberError}=await client.from('firm_members').select('firm_id, firms(id,name), companies(id,name)').eq('user_id',user.id);
+const {data:members,error:memberError}=await client.from('firm_members').select('firm_id, firms(id,name)').eq('user_id',user.id);
 if(memberError)throw memberError;
 if(!members?.length){setMode(true);fields.hidden=false;document.querySelector('#authTitle').textContent='Configurez votre espace';document.querySelector('#authIntro').textContent='Choisissez le nom du cabinet et de votre entreprise.';document.querySelector('#authEmail').value=user.email||'';document.querySelector('#authEmail').readOnly=true;document.querySelector('#authPassword').hidden=true;document.querySelector('#authPassword').required=false;document.querySelector('#authSubmit').textContent='Créer mon espace';document.querySelector('#authSwitch').hidden=true;showGate();form.dataset.onboarding='true';return}
-const row=members[0], company=row.companies?.find?.(c=>c) || row.companies;
+const row=members[0];
+const {data:companies,error:companyError}=await client.from('companies').select('id,name').eq('firm_id',row.firm_id).order('created_at',{ascending:true}).limit(1);
+if(companyError)throw companyError;
+const company=companies?.[0];
 if(!company?.id)throw new Error('Aucune entreprise n’est associée à cet espace.');
 companyId=company.id;document.querySelector('.workspace strong').textContent=company.name;document.querySelector('.crumb').firstChild.textContent=company.name+' / ';
 document.body.classList.add('live-mode');gate.hidden=true;form.dataset.onboarding='false';await loadTransactions()
