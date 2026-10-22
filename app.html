@@ -70,7 +70,7 @@ $('#moreCash').addEventListener('click',()=>toast('Les détails de trésorerie s
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script>
-(()=>{const cfg=window.MULTY_SUPABASE_CONFIG||{};if(!cfg.url||!cfg.anonKey)return;
+(()=>{const cfg=window.MULTY_SUPABASE_CONFIG||{};if(!cfg.url||!cfg.anonKey||new URLSearchParams(window.location.search).get('mode')!=='live')return;
 const gate=document.querySelector('#authGate'),form=document.querySelector('#authForm'),switcher=document.querySelector('#authSwitch'),fields=document.querySelector('#workspaceFields');
 gate.hidden=false;let client,signUp=false,companyId=null;
 document.querySelectorAll('.metrics,.mid-grid,.transactions,.footer').forEach(el=>el.classList.add('demo-only'));
