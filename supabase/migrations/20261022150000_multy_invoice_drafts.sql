@@ -104,7 +104,7 @@ begin
     raise exception 'Company access denied' using errcode = '42501';
   end if;
 
-  for line in select value from jsonb_array_elements(p_lines) as values(value) loop
+  for line in select item from jsonb_array_elements(p_lines) as line_items(item) loop
     line_description := trim(coalesce(line ->> 'description', ''));
     line_quantity := (line ->> 'quantity')::numeric;
     line_unit_price := (line ->> 'unit_price')::numeric;
@@ -131,7 +131,7 @@ begin
     subtotal, tax_total, subtotal + tax_total, caller_id
   ) returning id into invoice_id;
 
-  for line in select value from jsonb_array_elements(p_lines) as values(value) loop
+  for line in select item from jsonb_array_elements(p_lines) as line_items(item) loop
     line_description := trim(line ->> 'description');
     line_quantity := (line ->> 'quantity')::numeric;
     line_unit_price := (line ->> 'unit_price')::numeric;
