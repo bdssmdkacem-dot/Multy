@@ -101,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p _site/preview
-          rsync -a --exclude='.git/' _main/ _site/
+          rsync -a --exclude='.git/' --exclude='.github/' _main/ _site/
           cp _preview_source/index.html \
              _preview_source/app.html \
              _preview_source/auth.html \
