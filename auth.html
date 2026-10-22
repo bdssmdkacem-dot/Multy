@@ -55,7 +55,15 @@
     const email=$('email').value.trim().toLowerCase(), password=$('password').value;
     $('submitBtn').disabled=true;
     try {
-      if(mode==='signup') {
+      if(mode==='signup' && window.__multyNeedsFirm) {
+        const firmName=$('firmName').value.trim();
+        if(firmName.length<2 || firmName.length>180) throw new Error('Le nom doit contenir entre 2 et 180 caractères.');
+        const {error: firmError}=await client.rpc('create_initial_firm',{p_name:firmName});
+        if(firmError) throw firmError;
+        window.__multyNeedsFirm=false;
+        message('Espace créé. Le tableau de bord reste une démo et ne stocke pas encore les transactions dans Supabase.','success');
+        setTimeout(()=>location.href='./app.html',900);
+      } else if(mode==='signup') {
         const {data,error}=await client.auth.signUp({email,password,options:{data:{display_name:$('displayName').value.trim()},emailRedirectTo:new URL('./auth.html',location.href).href}});
         if(error) throw error;
         if(!data.user) throw new Error('Le compte n’a pas pu être créé.');
@@ -101,25 +109,11 @@
         return;
       }
       message('Adresse confirmée. Saisissez le nom du cabinet ou de votre entreprise pour terminer la création de votre espace.','success');
+      window.__multyNeedsFirm=true;
       signupTab.click();
       $('displayName').required=false; $('displayName').value=session.user.user_metadata?.display_name||'';
       $('firmName').required=true;
       $('firmName').focus();
-      $('submitBtn').textContent='Créer mon espace';
-      form.addEventListener('submit', async function provisionAfterConfirm(event) {
-        if (mode !== 'signup') return;
-        event.preventDefault();
-        const firmName=$('firmName').value.trim();
-        if(firmName.length<2 || firmName.length>180) { message('Le nom doit contenir entre 2 et 180 caractères.'); return; }
-        $('submitBtn').disabled=true;
-        try {
-          const {error: createError}=await client.rpc('create_initial_firm',{p_name:firmName});
-          if(createError) throw createError;
-          message('Espace créé. Le tableau de bord reste une démo et ne stocke pas encore les transactions dans Supabase.','success');
-          setTimeout(()=>location.href='./app.html',900);
-        } catch(err) { message(String(err?.message||'Impossible de créer cet espace.').slice(0,240)); }
-        finally { $('submitBtn').disabled=false; }
-      },{once:true});
     } catch(err) { message(String(err?.message||'Impossible de vérifier le compte.').slice(0,240)); }
   }
   setMode('signup');
