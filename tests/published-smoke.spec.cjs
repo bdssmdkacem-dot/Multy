@@ -1,12 +1,13 @@
 const { test, expect } = require('@playwright/test');
 const testingPublishedSite = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+const expectedFeatureCount = Number(process.env.PLAYWRIGHT_EXPECT_FEATURES || (testingPublishedSite ? 6 : 7));
 
 test('published marketing page loads and dashboard entry point works', async ({ page }) => {
   const response = await page.goto('./');
   expect(response && response.ok()).toBeTruthy();
   await expect(page).toHaveTitle(/Multy/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('vision');
-  await expect(page.locator('#fonctionnalites .feature')).toHaveCount(testingPublishedSite ? 6 : 7);
+  await expect(page.locator('#fonctionnalites .feature')).toHaveCount(expectedFeatureCount);
   await page.getByRole('link', { name: /Explorer le tableau de bord/i }).click();
   await expect(page).toHaveURL(/app\.html$/);
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
