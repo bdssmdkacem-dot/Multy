@@ -49,7 +49,7 @@ The default dashboard remains a fictitious demo. To enable authenticated MAD tra
 
 1. Create a Supabase project and apply the SQL files in `supabase/migrations/` in filename order.
 2. Apply every migration in filename order, then enable email/password sign-in in Supabase Auth. Configure email confirmation as desired.
-3. Set `url` and the public anon/publishable `anonKey` in `supabase-config.js`. This key is intended for browser clients; never put a `service_role` key in the site.
+3. The project URL and public publishable key are configured in `supabase-config.js`. This key is intended for browser clients; never put a `service_role` key in the site. Open `/app.html?mode=live` to use Supabase; `/app.html` keeps the interactive demo available.
 4. Serve the site over HTTP(S), open `/app.html`, create an account, then enter a cabinet and company name.
 
 The initial firm, membership, company and audit event are created in one database transaction. Live transaction rows use MAD and are isolated by row-level security. The invoice draft RPC stores customer details and line totals atomically and limits writes to firm administrators and accountants. Drafts are deliberately unnumbered. They cannot be issued, sent, or treated as compliant invoices. VAT settings and mandatory invoice details must be validated with a Moroccan accountant and current official requirements before issuing real documents. The live balance is the net of recorded transactions only; this prototype does not model bank balances or a complete accounting ledger.
