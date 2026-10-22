@@ -12,7 +12,7 @@ Cette branche prépare l'intégration Supabase Auth et le schéma PostgreSQL ave
 Dans SQL Editor, exécutez `supabase/migrations/20261022110000_multy_auth_rls.sql`.
 La migration ajoute les profils, cabinets, membres, entreprises, transactions, journal d'audit, RLS et la fonction `create_initial_firm`. Vérifiez le résultat dans Database / Tables et Authentication / Policies avant tout test.
 
-La première version n'autorise pas les utilisateurs à ajouter eux-mêmes des membres ni à modifier les rôles. Les invitations, la révocation, la gestion complète des entreprises et les documents nécessitent des flux serveur supplémentaires. Le journal d'audit de cette migration n'est pas un archivage externe inviolable ; configurez un export externe surveillé avant la production.
+La première version n'autorise pas les utilisateurs à ajouter eux-mêmes des membres ni à modifier les rôles. Les invitations, la révocation, la gestion complète des entreprises et les documents nécessitent des flux serveur supplémentaires. Le journal d'audit capture les changements de transactions sans inclure montants ni descriptions. Ses références sont volontairement sans clés étrangères pour éviter la réécriture de l'historique lors d'une suppression. Ce journal n'est pas un archivage externe inviolable ; configurez un export externe surveillé avant la production.
 
 ## 3. Configurer le site statique
 `supabase-config.js` contient déjà l'URL et la clé publishable communiquées pour le projet. Ces deux valeurs sont prévues pour être visibles dans le navigateur ; RLS est donc obligatoire. N'y placez aucun mot de passe ni clé secrète.
