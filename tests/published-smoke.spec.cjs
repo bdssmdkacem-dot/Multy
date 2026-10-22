@@ -53,3 +53,24 @@ test('published release matches Moroccan market and discloses demo currency', as
   await expect(page.locator('body')).toContainText('Montants fictifs en DH');
   await expect(page.locator('body')).not.toContainText('€');
 });
+
+
+test('published authentication page and public Supabase configuration load', async ({ page }) => {
+  const authResponse = await page.goto('./auth.html');
+  expect(authResponse && authResponse.status()).toBe(200);
+  await expect(page).toHaveTitle(/Compte Multy/);
+  await expect(page.getByRole('heading', { name: 'Créer votre compte' })).toBeVisible();
+  await expect(page.locator('#email')).toBeVisible();
+  await expect(page.locator('#password')).toBeVisible();
+  const configResponse = await page.request.get('./supabase-config.js');
+  expect(configResponse.status()).toBe(200);
+  const configText = await configResponse.text();
+  expect(configText).toContain('window.MULTY_SUPABASE_CONFIG');
+  expect(configText).toContain('https://abxapmbiuijaybwddvrw.supabase.co');
+  expect(configText).toContain('sb_publishable_');
+  expect(configText).not.toMatch(/service_role|sb_secret/i);
+  await page.reload();
+  const config = await page.evaluate(() => window.MULTY_SUPABASE_CONFIG);
+  expect(config && config.url).toBe('https://abxapmbiuijaybwddvrw.supabase.co');
+  expect(config && config.publishableKey).toMatch(/^sb_publishable_/);
+});
