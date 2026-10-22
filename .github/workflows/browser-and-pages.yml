@@ -43,6 +43,9 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: browser-tests
     runs-on: ubuntu-latest
+    concurrency:
+      group: multy-github-pages-deployment
+      cancel-in-progress: false
     permissions:
       contents: read
       pages: write
@@ -63,4 +66,62 @@ jobs:
           path: .
       - name: Deploy to GitHub Pages
         id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Publish an isolated preview at /preview/ while preserving the existing
+  # main-branch website at the site root. This lets us acceptance-test a feature
+  # branch without merging it into main or replacing the current production root.
+  deploy-preview:
+    if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/heads/commercial/')
+    needs: browser-tests
+    runs-on: ubuntu-latest
+    concurrency:
+      group: multy-github-pages-deployment
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://bdssmdkacem-dot.github.io/Multy/preview/
+    steps:
+      - name: Checkout current main site for the production root
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _main
+      - name: Checkout tested feature-branch source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: _preview_source
+      - name: Assemble root-preserving preview artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site/preview
+          rsync -a --exclude='.git/' _main/ _site/
+          cp _preview_source/index.html \
+             _preview_source/app.html \
+             _preview_source/auth.html \
+             _preview_source/supabase-config.js \
+             _site/preview/
+          touch _site/.nojekyll
+          test -s _site/index.html
+          test -s _site/app.html
+          test -s _site/preview/index.html
+          test -s _site/preview/app.html
+          test -s _site/preview/auth.html
+          test -s _site/preview/supabase-config.js
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload root-preserving preview artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy preview
+        id: preview-deployment
         uses: actions/deploy-pages@v4
