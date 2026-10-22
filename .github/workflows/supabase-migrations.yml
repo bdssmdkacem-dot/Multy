@@ -1,0 +1,88 @@
+name: Supabase migration chain and isolation
+
+on:
+  push:
+    branches: [main, 'feat/supabase-auth-onboarding']
+    paths:
+      - 'supabase/migrations/**'
+      - 'tests/supabase-migration-smoke.sql'
+      - '.github/workflows/supabase-migrations.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'tests/supabase-migration-smoke.sql'
+      - '.github/workflows/supabase-migrations.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migration-chain:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: multy_supabase_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d multy_supabase_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres-test-password@localhost:5432/multy_supabase_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Prepare minimal Supabase Auth compatibility schema
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE EXTENSION IF NOT EXISTS pgcrypto;
+          DO $roles$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+              EXECUTE 'CREATE ROLE anon NOLOGIN';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+              EXECUTE 'CREATE ROLE authenticated NOLOGIN';
+            END IF;
+          END
+          $roles$;
+          CREATE SCHEMA auth;
+          CREATE TABLE auth.users (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb
+          );
+          CREATE FUNCTION auth.uid()
+          RETURNS uuid
+          LANGUAGE sql
+          STABLE
+          AS $$
+            SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+          $$;
+          GRANT USAGE ON SCHEMA auth TO anon, authenticated;
+          GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated;
+          SQL
+      - name: Apply all Supabase migrations in filename order
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(supabase/migrations/*.sql)
+          test "${#files[@]}" -gt 0
+          for migration in "${files[@]}"; do
+            echo "::group::Applying ${migration}"
+            psql "$DATABASE_URL" --set ON_ERROR_STOP=1 --file "${migration}"
+            echo "::endgroup::"
+          done
+      - name: Verify invoice totals, expense columns, RLS, and cross-tenant isolation
+        run: psql "$DATABASE_URL" --set ON_ERROR_STOP=1 --file tests/supabase-migration-smoke.sql
