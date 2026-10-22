@@ -68,7 +68,8 @@ test('published authentication page and public Supabase configuration load', asy
   expect(configText).toContain('window.MULTY_SUPABASE_CONFIG');
   expect(configText).toContain('https://abxapmbiuijaybwddvrw.supabase.co');
   expect(configText).toContain('sb_publishable_');
-  const configuredKey = configText.match(/publishableKey:\s*[\"']([^\"']+)[\"']/i)?.[1] ?? '';\n  expect(configuredKey).toMatch(/^sb_publishable_/);\n  expect(configuredKey).not.toMatch(/service_role|sb_secret/i);
+  const configuredKey = configText.match(/publishableKey:\s*[\"']([^\"']+)[\"']/i)?.[1] ?? '';
+  expect(configuredKey).toMatch(/^sb_publishable_/);\n  expect(configuredKey).not.toMatch(/service_role|sb_secret/i);
   await page.reload();
   const config = await page.evaluate(() => window.MULTY_SUPABASE_CONFIG);
   expect(config && config.url).toBe('https://abxapmbiuijaybwddvrw.supabase.co');
