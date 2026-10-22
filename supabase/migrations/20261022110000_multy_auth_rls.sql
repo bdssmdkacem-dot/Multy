@@ -80,12 +80,12 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
+as $function$
   select exists (
     select 1 from public.firm_members m
     where m.firm_id = p_firm_id and m.user_id = auth.uid()
   );
-$;
+$function$;
 revoke all on function public.is_firm_member(uuid) from public, anon;
 grant execute on function public.is_firm_member(uuid) to authenticated;
 
