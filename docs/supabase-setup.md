@@ -1,7 +1,7 @@
 # Configuration Supabase — Multy
 
 ## État et limites
-Cette branche prépare l'intégration Supabase Auth et le schéma PostgreSQL avec Row Level Security (RLS). Aucun projet Supabase n'est encore connecté à ce dépôt et aucune clé réelle n'est enregistrée. L'inscription ne fonctionnera qu'après configuration du projet et application de la migration. Le tableau de bord `app.html` reste une démo locale : il n'est pas encore connecté aux tables Supabase et ses opérations ne sont pas persistantes.
+Cette branche prépare l'intégration Supabase Auth et le schéma PostgreSQL avec Row Level Security (RLS). Le projet de développement est configuré dans `supabase-config.js` avec son URL et sa clé publishable publique. Aucun secret serveur n'est stocké dans le dépôt. L'inscription ne fonctionnera qu'après configuration du projet et application de la migration. Le tableau de bord `app.html` reste une démo locale : il n'est pas encore connecté aux tables Supabase et ses opérations ne sont pas persistantes.
 
 ## 1. Créer le projet
 1. Créez un projet Supabase dédié à l'environnement de développement/test.
@@ -15,7 +15,7 @@ La migration ajoute les profils, cabinets, membres, entreprises, transactions, j
 La première version n'autorise pas les utilisateurs à ajouter eux-mêmes des membres ni à modifier les rôles. Les invitations, la révocation, la gestion complète des entreprises et les documents nécessitent des flux serveur supplémentaires. Le journal d'audit de cette migration n'est pas un archivage externe inviolable ; configurez un export externe surveillé avant la production.
 
 ## 3. Configurer le site statique
-Modifiez `supabase-config.js` en remplaçant les chaînes vides par l'URL et la clé publishable. Ces deux valeurs sont prévues pour être visibles dans le navigateur ; RLS est donc obligatoire. N'y placez aucun mot de passe ni clé secrète.
+`supabase-config.js` contient déjà l'URL et la clé publishable communiquées pour le projet. Ces deux valeurs sont prévues pour être visibles dans le navigateur ; RLS est donc obligatoire. N'y placez aucun mot de passe ni clé secrète.
 Dans Authentication / URL Configuration, configurez :
 - Site URL : l'URL du site de test/publication.
 - Redirect URLs : l'URL exacte du site suivie de `/app.html`, et l'URL locale de développement utilisée pendant les tests.
