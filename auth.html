@@ -70,7 +70,15 @@
         const {data,error}=await client.auth.signInWithPassword({email,password});
         if(error) throw error;
         if(!data.session) throw new Error('Connexion incomplète. Vérifiez votre e-mail puis réessayez.');
-        message('Connexion réussie. Le tableau de bord de démonstration reste sans données persistantes pour le moment.','success');
+        const {data: memberships,error: membershipError}=await client.from('firm_members').select('firm_id').limit(1);
+        if(membershipError) throw membershipError;
+        if(!memberships || memberships.length===0) {
+          const firmName=prompt('Nom de votre cabinet ou entreprise pour initialiser votre espace :');
+          if(!firmName || firmName.trim().length<2) { message('Connexion réussie. Votre espace reste à initialiser ; reconnectez-vous pour terminer.','success'); return; }
+          const {error: firmError}=await client.rpc('create_initial_firm',{p_name:firmName.trim()});
+          if(firmError) throw firmError;
+        }
+        message('Connexion réussie. Le tableau de bord est encore une démo et ne stocke pas les opérations dans Supabase.','success');
         setTimeout(()=>location.href='./app.html',900);
       }
     } catch(error) {
