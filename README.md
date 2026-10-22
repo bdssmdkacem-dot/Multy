@@ -56,6 +56,12 @@ The default dashboard remains a fictitious demo. To enable authenticated MAD tra
 
 The initial firm, membership, company and audit event are created in one database transaction. Live transaction rows use MAD and are isolated by row-level security. The invoice draft RPC stores customer details and line totals atomically and limits writes to firm administrators and accountants. Drafts are deliberately unnumbered. They cannot be issued, sent, or treated as compliant invoices. VAT settings and mandatory invoice details must be validated with a Moroccan accountant and current official requirements before issuing real documents. Expense entries are written to the same transaction ledger and included in the net transaction balance. The live balance does not represent bank balances; this prototype has no bank feed, receipt capture, approvals, reconciliation, or complete accounting ledger.
 
+## Existing Supabase project — required preflight
+
+Before applying any SQL to an existing project, run the **read-only** catalog inspection in `supabase/diagnostics/20261022_live_schema_preflight.sql` and review all result sets. Follow `docs/supabase-existing-project-preflight.md` to compare current tables, columns, RLS policies, grants, functions and constraints with the intended schema.
+
+Do not blindly replay the base migration in SQL Editor: named policies can cause duplicate-policy errors if that migration has already succeeded. The CI migration test uses a fresh temporary PostgreSQL database and does not establish whether replaying the SQL is safe against an existing project. No live migration should be considered applied until it succeeds against that target. No live-project migration is run by CI.
+
 ## Important
 
 Multy est un prototype original inspiré des usages courants des logiciels de gestion financière. Il ne reproduit pas le code, la marque, les textes propriétaires ou les ressources graphiques de Pennylane. Les données sont fictives : aucune banque, facture réelle ou API comptable n'est connectée. Les opérations ajoutées dans le prototype restent dans la session du navigateur et ne sont pas un registre comptable durable.
