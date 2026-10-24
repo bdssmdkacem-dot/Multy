@@ -16,7 +16,7 @@ permissions:
 jobs:
   preview-browser:
     if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/commercial/') || github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'commercial/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       PLAYWRIGHT_BASE_URL: https://bdssmdkacem-dot.github.io/Multy/preview/
       PLAYWRIGHT_EXPECT_FEATURES: '7'
@@ -46,7 +46,7 @@ jobs:
 
   production-browser:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       PLAYWRIGHT_BASE_URL: https://bdssmdkacem-dot.github.io/Multy/
     steps:
