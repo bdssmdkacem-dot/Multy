@@ -46,9 +46,9 @@ create index if not exists transactions_company_id_idx on public.transactions(co
 
 create table if not exists public.audit_logs (
   id bigint generated always as identity primary key,
-  actor_user_id uuid,
-  firm_id uuid,
-  company_id uuid,
+  actor_user_id uuid references auth.users(id) on delete set null,
+  firm_id uuid references public.firms(id) on delete set null,
+  company_id uuid references public.companies(id) on delete set null,
   action text not null check (char_length(action) between 1 and 80),
   entity_type text not null check (char_length(entity_type) between 1 and 80),
   entity_id text,
@@ -57,15 +57,14 @@ create table if not exists public.audit_logs (
 );
 create index if not exists audit_logs_firm_created_idx on public.audit_logs(firm_id, created_at desc);
 
+
 -- Record transaction changes without copying financial amounts or descriptions into audit metadata.
--- UUID references in audit_logs are intentionally not foreign keys so retained history
--- cannot be rewritten by ON DELETE actions when an account/company is removed.
 create or replace function public.audit_transaction_change()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $audit$
 declare
   target_company_id uuid;
   target_firm_id uuid;
@@ -92,13 +91,12 @@ begin
   if tg_op = 'DELETE' then return old; end if;
   return new;
 end;
-$;
+$audit$;
 
 drop trigger if exists transactions_audit_change on public.transactions;
 create trigger transactions_audit_change
 after insert or update or delete on public.transactions
 for each row execute function public.audit_transaction_change();
-
 
 -- Provision a minimal profile after successful Supabase Auth registration.
 create or replace function public.handle_new_user()
@@ -115,6 +113,22 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
+
+-- SECURITY DEFINER helper avoids recursive RLS evaluation when checking membership.
+create or replace function public.is_firm_member(p_firm_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select exists (
+    select 1 from public.firm_members m
+    where m.firm_id = p_firm_id and m.user_id = auth.uid()
+  );
+$function$;
+revoke all on function public.is_firm_member(uuid) from public, anon;
+grant execute on function public.is_firm_member(uuid) to authenticated;
 
 -- The user may create their first firm only for themselves; the membership is atomic.
 create or replace function public.create_initial_firm(p_name text)
@@ -180,18 +194,18 @@ create policy profiles_read_self on public.profiles for select to authenticated 
 create policy profiles_update_self on public.profiles for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
 
 create policy firms_read_members on public.firms for select to authenticated
-using (exists (select 1 from public.firm_members m where m.firm_id = id and m.user_id = (select auth.uid())));
+using (public.is_firm_member(id));
 
 create policy firm_members_read_same_firm on public.firm_members for select to authenticated
-using (user_id = (select auth.uid())); -- Team directory access is withheld until a non-recursive membership helper is deployed.
+using (public.is_firm_member(firm_members.firm_id));
 
 create policy companies_read_member_firm on public.companies for select to authenticated
-using (exists (select 1 from public.firm_members m where m.firm_id = companies.firm_id and m.user_id = (select auth.uid())));
+using (public.is_firm_member(companies.firm_id));
 
 create policy transactions_read_member_firm on public.transactions for select to authenticated
 using (exists (
-  select 1 from public.companies c join public.firm_members m on m.firm_id = c.firm_id
-  where c.id = transactions.company_id and m.user_id = (select auth.uid())
+  select 1 from public.companies c
+  where c.id = transactions.company_id and public.is_firm_member(c.firm_id)
 ));
 
 create policy transactions_insert_editor on public.transactions for insert to authenticated
