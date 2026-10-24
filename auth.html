@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f9f6">
+<title>Compte Multy — Inscription et connexion</title>
+<style>
+:root{--ink:#162b22;--muted:#64736b;--green:#176b50;--dark:#102e25;--lime:#d8f28a;--line:#e3e9e4;--bg:#f7f9f6}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;grid-template-columns:1fr 1fr}.story{background:var(--dark);color:#fff;padding:clamp(30px,6vw,84px);display:flex;flex-direction:column;justify-content:space-between;min-height:100vh}.logo{font-size:26px;font-weight:800;letter-spacing:-1px}.logo span{display:inline-grid;place-items:center;background:var(--lime);color:var(--dark);border-radius:10px;width:35px;height:35px;margin-right:9px}.story h1{font-size:clamp(34px,4.4vw,58px);line-height:1.05;letter-spacing:-2.4px;max-width:550px;margin:0 0 20px}.story p{color:#c0d0c7;max-width:470px;line-height:1.8}.foot{font-size:12px;color:#a5b9af}.main{display:grid;place-items:center;padding:35px 22px}.panel{width:min(440px,100%)}.back{color:var(--muted);font-size:13px;text-decoration:none}.eyebrow{color:var(--green);font-size:11px;letter-spacing:1.5px;font-weight:800;margin-top:36px}.panel h2{font-size:32px;letter-spacing:-1.2px;margin:8px 0}.sub{color:var(--muted);font-size:13px;margin:0 0 24px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;background:#eaf0eb;border-radius:12px;margin-bottom:22px}.tabs button{border:0;border-radius:8px;padding:11px;background:transparent;color:#526159;font-weight:700}.tabs button[aria-selected=true]{background:white;color:var(--ink);box-shadow:0 2px 8px #1235260d}label{display:block;font-size:12px;font-weight:700;margin:14px 0 6px}input{width:100%;border:1px solid #dce5de;background:white;border-radius:10px;padding:13px 14px;font:inherit;outline:none}input:focus{border-color:#70a78d;box-shadow:0 0 0 3px #176b5012}.submit{width:100%;margin-top:22px;border:0;border-radius:10px;padding:14px;background:var(--green);color:white;font-weight:750}.submit:disabled{opacity:.6;cursor:wait}.hint{font-size:11px;color:var(--muted);margin-top:16px;line-height:1.7}.message{display:none;padding:12px;border-radius:10px;margin-top:15px;font-size:13px;overflow-wrap:anywhere}.message.show{display:block}.message.error{background:#fff0ee;color:#963c32}.message.success{background:#e9f7ee;color:#236341}.hidden{display:none!important}@media(max-width:760px){body{display:block}.story{min-height:auto;padding:24px 25px 30px;gap:45px}.story h1{font-size:34px}.story p{margin-bottom:0}.story .foot{display:none}.main{padding:32px 22px 48px}.eyebrow{margin-top:28px}}
+</style>
+</head>
+<body>
+<aside class="story"><div class="logo"><span>M</span>Multy</div><div><h1>Votre gestion financière, plus claire.</h1><p>Un espace pensé pour les indépendants, les entreprises et les cabinets comptables au Maroc. Les données de chaque organisation restent isolées par des règles de sécurité en base.</p></div><div class="foot">Prototype en préparation · Marché marocain · MAD / DH</div></aside>
+<main class="main"><section class="panel" aria-labelledby="formTitle">
+<a class="back" href="./">← Retour à Multy</a>
+<div class="eyebrow">ESPACE PROFESSIONNEL</div><h2 id="formTitle">Créer votre compte</h2><p class="sub" id="subtitle">Inscrivez-vous avec votre adresse e-mail. La confirmation par e-mail peut être requise.</p>
+<div class="tabs" role="tablist" aria-label="Choisir le parcours"><button type="button" role="tab" id="signupTab" aria-selected="true">Créer un compte</button><button type="button" role="tab" id="loginTab" aria-selected="false">Se connecter</button></div>
+<form id="authForm" novalidate>
+<div id="nameWrap"><label for="displayName">Nom complet</label><input id="displayName" name="displayName" autocomplete="name" maxlength="100" placeholder="Votre nom" required></div>
+<label for="email">Adresse e-mail</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="vous@entreprise.ma" required>
+<label for="password">Mot de passe</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="10 caractères minimum" required>
+<div id="firmWrap"><label for="firmName">Nom de votre cabinet ou entreprise</label><input id="firmName" name="firmName" maxlength="180" placeholder="Ex. Cabinet Atlas" required></div>
+<button class="submit" id="submitBtn" type="submit">Créer mon compte</button>
+</form>
+<div class="message" id="message" role="status" aria-live="polite"></div>
+<p class="hint">En créant un compte, vous utilisez un environnement en préparation. N’y saisissez pas de données comptables réelles. La politique de confidentialité et les conditions doivent être finalisées avant l’ouverture publique.</p>
+</section></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const form = $('authForm'), signupTab = $('signupTab'), loginTab = $('loginTab');
+  let mode = 'signup';
+  function message(text, kind='error') { const box=$('message'); box.textContent=text; box.className='message show '+kind; }
+  function setMode(next) {
+    mode=next; const signup=mode==='signup';
+    signupTab.setAttribute('aria-selected',String(signup)); loginTab.setAttribute('aria-selected',String(!signup));
+    $('formTitle').textContent=signup?'Créer votre compte':'Bon retour';
+    $('subtitle').textContent=signup?'Inscrivez-vous avec votre adresse e-mail. La confirmation par e-mail peut être requise.':'Connectez-vous à votre espace professionnel.';
+    $('nameWrap').classList.toggle('hidden',!signup); $('firmWrap').classList.toggle('hidden',!signup);
+    $('displayName').required=signup; $('firmName').required=signup;
+    $('password').autocomplete=signup?'new-password':'current-password';
+    $('password').minLength=signup?10:1;
+    $('submitBtn').textContent=signup?'Créer mon compte':'Se connecter';
+    $('message').className='message';
+  }
+  signupTab.addEventListener('click',()=>setMode('signup')); loginTab.addEventListener('click',()=>setMode('login'));
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const cfg=window.MULTY_SUPABASE_CONFIG;
+    if (!window.supabase || !cfg || !cfg.url || !cfg.publishableKey) {
+      message('Supabase n’est pas encore configuré. Ajoutez l’URL du projet et sa clé publishable dans supabase-config.js, puis configurez les URL de redirection dans Supabase.','error'); return;
+    }
+    const client=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+    const email=$('email').value.trim().toLowerCase(), password=$('password').value;
+    $('submitBtn').disabled=true;
+    try {
+      if(mode==='signup' && window.__multyNeedsFirm) {
+        const firmName=$('firmName').value.trim();
+        if(firmName.length<2 || firmName.length>180) throw new Error('Le nom doit contenir entre 2 et 180 caractères.');
+        const {error: firmError}=await client.rpc('create_initial_firm',{p_name:firmName});
+        if(firmError) throw firmError;
+        window.__multyNeedsFirm=false;
+        message('Espace créé. Le tableau de bord reste une démo et ne stocke pas encore les transactions dans Supabase.','success');
+        setTimeout(()=>location.href='./app.html',900);
+      } else if(mode==='signup') {
+        const {data,error}=await client.auth.signUp({email,password,options:{data:{display_name:$('displayName').value.trim()},emailRedirectTo:new URL('./auth.html',location.href).href}});
+        if(error) throw error;
+        if(!data.user) throw new Error('Le compte n’a pas pu être créé.');
+        if(!data.session) {
+          message('Demande envoyée. Consultez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.','success');
+        } else {
+          const {error: firmError}=await client.rpc('create_initial_firm',{p_name:$('firmName').value.trim()});
+          if(firmError) throw firmError;
+          message('Compte créé et espace initialisé. La connexion est active sur cet appareil.','success');
+        }
+      } else {
+        const {data,error}=await client.auth.signInWithPassword({email,password});
+        if(error) throw error;
+        if(!data.session) throw new Error('Connexion incomplète. Vérifiez votre e-mail puis réessayez.');
+        const {data: memberships,error: membershipError}=await client.from('firm_members').select('firm_id').limit(1);
+        if(membershipError) throw membershipError;
+        if(!memberships || memberships.length===0) {
+          const firmName=prompt('Nom de votre cabinet ou entreprise pour initialiser votre espace :');
+          if(!firmName || firmName.trim().length<2) { message('Connexion réussie. Votre espace reste à initialiser ; reconnectez-vous pour terminer.','success'); return; }
+          const {error: firmError}=await client.rpc('create_initial_firm',{p_name:firmName.trim()});
+          if(firmError) throw firmError;
+        }
+        message('Connexion réussie. Le tableau de bord est encore une démo et ne stocke pas les opérations dans Supabase.','success');
+        setTimeout(()=>location.href='./app.html',900);
+      }
+    } catch(error) {
+      const text=String(error && error.message || 'Une erreur est survenue.');
+      message(text.length>240?text.slice(0,240):text,'error');
+    } finally { $('submitBtn').disabled=false; }
+  });
+  async function finishConfirmedSession() {
+    const cfg=window.MULTY_SUPABASE_CONFIG;
+    if (!window.supabase || !cfg || !cfg.url || !cfg.publishableKey) return;
+    const client=window.supabase.createClient(cfg.url,cfg.publishableKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+    const {data:{session},error}=await client.auth.getSession();
+    if(error || !session) return;
+    try {
+      const {data: memberships,error: membershipError}=await client.from('firm_members').select('firm_id').limit(1);
+      if(membershipError) throw membershipError;
+      if(memberships && memberships.length) {
+        message('Adresse confirmée. Vous êtes connecté ; le tableau de bord reste une démo locale.','success');
+        loginTab.click();
+        return;
+      }
+      message('Adresse confirmée. Saisissez le nom du cabinet ou de votre entreprise pour terminer la création de votre espace.','success');
+      window.__multyNeedsFirm=true;
+      signupTab.click();
+      $('displayName').required=false; $('displayName').value=session.user.user_metadata?.display_name||'';
+      $('firmName').required=true;
+      $('firmName').focus();
+    } catch(err) { message(String(err?.message||'Impossible de vérifier le compte.').slice(0,240)); }
+  }
+  setMode('signup');
+  finishConfirmedSession();
+})();
+</script>
+</body>
+</html>
