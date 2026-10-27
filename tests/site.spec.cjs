@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('marketing page loads with working in-page navigation and dashboard links', async ({ page }) => {
+test('marketing page loads with working in-page navigation and dashboard links', async ({ page }, testInfo) => {
   await page.goto('./');
   await expect(page).toHaveTitle(/Multy/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('vision');
@@ -13,6 +13,11 @@ test('marketing page loads with working in-page navigation and dashboard links',
   await page.getByRole('link', { name: /Ouvrir le tableau de bord/i }).click();
   await expect(page).toHaveURL(/app\.html$/);
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
+  await expect(page.locator('#invoiceMetric')).toContainText('3 740,00 DH');
+  if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
+  await page.locator('.nav button[data-page="Facturation"]').click();
+  await expect(page).toHaveURL(/facturation\.html$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Facturation');
 });
 
 test('marketing navigation opens and closes accessibly on mobile', async ({ page }) => {
@@ -170,4 +175,62 @@ test('account page exposes signup/login modes and has public Supabase configurat
   expect(config.url).toBe('https://abxapmbiuijaybwddvrw.supabase.co');
   expect(config.publishableKey).toMatch(/^sb_publishable_/);
   expect(config.publishableKey).not.toContain('sb_secret');
+});
+
+test('billing calculates totals and saves a local invoice draft', async ({ page }) => {
+  await page.goto('./facturation.html');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.getByRole('button', { name: /Nouvelle facture/ }).click();
+  await page.locator('#clientName').fill('Client test');
+  await page.locator('.line-description').fill('Conseil');
+  await page.locator('.line-quantity').fill('2');
+  await page.locator('.line-unit').fill('100');
+  await expect(page.locator('#totalHt')).toContainText('200');
+  await expect(page.locator('#totalVat')).toContainText('40');
+  await expect(page.locator('#totalTtc')).toContainText('240');
+  await page.getByRole('button', { name: 'Enregistrer le brouillon' }).click();
+  await expect(page.locator('#invoiceRows tr')).toHaveCount(5);
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Client test');
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('240');
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Brouillon');
+  await page.reload();
+  await expect(page.locator('#invoiceRows tr')).toHaveCount(5);
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Client test');
+});
+
+test('billing filters and searches the invoice list', async ({ page }) => {
+  await page.goto('./facturation.html');
+  await page.getByRole('tab', { name: 'Payées' }).click();
+  await expect(page.locator('#invoiceRows tr')).toHaveCount(1);
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Maison Créative');
+  await page.locator('#invoiceSearch').fill('absent');
+  await expect(page.locator('#emptyInvoices')).toBeVisible();
+});
+
+test('billing page fits the mobile viewport', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.startsWith('mobile'), 'Phone-specific layout check');
+  await page.goto('./facturation.html');
+  const metrics = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+  expect(metrics.content).toBeLessThanOrEqual(metrics.viewport);
+});
+
+test('pilotage navigation opens each local demo module', async ({ page }, testInfo) => {
+  await page.goto('./app.html');
+  const modules = [
+    ['Transactions', 'Entrées du mois'],
+    ['Dépenses', 'Total du mois'],
+    ['Trésorerie', 'Comptes de trésorerie'],
+    ['Comptabilité', 'Pré-comptabilité indicative'],
+    ['Rapports', 'Chiffre d’affaires HT'],
+    ['Équipe', 'Membres de l’espace']
+  ];
+
+  for (const [name, content] of modules) {
+    if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
+    await page.locator('.nav button[data-page="' + name + '"]').click();
+    await expect(page.locator('#pageTitle')).toContainText(name);
+    await expect(page.locator('#modulePage')).toHaveClass(/active/);
+    await expect(page.locator('#modulePage')).toContainText(content);
+  }
 });

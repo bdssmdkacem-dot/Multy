@@ -51,7 +51,7 @@ jobs:
                   if self.title_depth:
                       self.title_text.append(data)
 
-          for filename in ("index.html", "app.html"):
+          for filename in ("index.html", "app.html", "facturation.html"):
               path = Path(filename)
               assert path.is_file(), f"{filename} is missing"
               source = path.read_text(encoding="utf-8")
@@ -65,5 +65,8 @@ jobs:
               if filename == "app.html":
                   assert "script" in parser.tags, "Dashboard JavaScript is missing"
                   assert "transactionRows" in parser.ids and "search" in parser.ids, "Dashboard controls are missing"
+              if filename == "facturation.html":
+                  assert "script" in parser.tags, "Billing JavaScript is missing"
+                  assert {"invoiceRows", "invoiceForm", "invoiceDialog"}.issubset(parser.ids), "Billing controls are missing"
               print(f"{filename}: structural checks passed ({len(parser.tags)} elements).")
           PY

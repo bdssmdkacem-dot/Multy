@@ -8,6 +8,7 @@ Multy est actuellement un site vitrine et un tableau de bord interactif de démo
 - Exemples de montants affichés en dirhams (DH / MAD).
 - Tableau de bord avec données fictives, recherche, filtre de période, ajout temporaire et export CSV.
 - Publication statique possible avec GitHub Pages.
+- Page Facturation de démonstration : brouillons locaux, lignes de facture et calcul HT / TVA / TTC ; aucun envoi ni stockage Supabase.
 - **Pas encore un logiciel commercial de gestion** : aucune authentification, base de données, sauvegarde durable, gestion multi-entreprise ou intégration bancaire.
 - Les chiffres et opérations de démonstration ne doivent pas être utilisés comme comptabilité réelle.
 
