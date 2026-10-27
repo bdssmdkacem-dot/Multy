@@ -57,6 +57,47 @@ create table if not exists public.audit_logs (
 );
 create index if not exists audit_logs_firm_created_idx on public.audit_logs(firm_id, created_at desc);
 
+
+-- Record transaction changes without copying financial amounts or descriptions into audit metadata.
+create or replace function public.audit_transaction_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $audit$
+declare
+  target_company_id uuid;
+  target_firm_id uuid;
+  target_actor uuid := auth.uid();
+  target_action text;
+  target_id uuid;
+begin
+  if tg_op = 'DELETE' then
+    target_company_id := old.company_id;
+    target_id := old.id;
+    target_action := 'transaction.deleted';
+    if target_actor is null then target_actor := old.created_by; end if;
+  else
+    target_company_id := new.company_id;
+    target_id := new.id;
+    target_action := case when tg_op = 'INSERT' then 'transaction.created' else 'transaction.updated' end;
+    if target_actor is null then target_actor := new.created_by; end if;
+  end if;
+  select c.firm_id into target_firm_id
+    from public.companies c where c.id = target_company_id;
+  insert into public.audit_logs(actor_user_id, firm_id, company_id, action, entity_type, entity_id, details)
+    values (target_actor, target_firm_id, target_company_id, target_action, 'transaction', target_id::text,
+      jsonb_build_object('currency', 'MAD'));
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$audit$;
+
+drop trigger if exists transactions_audit_change on public.transactions;
+create trigger transactions_audit_change
+after insert or update or delete on public.transactions
+for each row execute function public.audit_transaction_change();
+
 -- Provision a minimal profile after successful Supabase Auth registration.
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
@@ -80,12 +121,12 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
+as $function$
   select exists (
     select 1 from public.firm_members m
     where m.firm_id = p_firm_id and m.user_id = auth.uid()
   );
-$;
+$function$;
 revoke all on function public.is_firm_member(uuid) from public, anon;
 grant execute on function public.is_firm_member(uuid) to authenticated;
 
