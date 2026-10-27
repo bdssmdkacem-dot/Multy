@@ -1,6 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const testingPublishedSite = Boolean(process.env.PLAYWRIGHT_BASE_URL);
-const expectedFeatureCount = Number(process.env.PLAYWRIGHT_EXPECT_FEATURES || (testingPublishedSite ? 6 : 7));
+const expectedFeatureCount = Number(process.env.PLAYWRIGHT_EXPECT_FEATURES || 7);
 
 test('published marketing page loads and dashboard entry point works', async ({ page }) => {
   const response = await page.goto('./');
