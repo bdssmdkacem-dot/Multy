@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('marketing page loads with working in-page navigation and dashboard links', async ({ page }) => {
+test('marketing page loads with working in-page navigation and dashboard links', async ({ page }, testInfo) => {
   await page.goto('./');
   await expect(page).toHaveTitle(/Multy/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('vision');
@@ -14,6 +14,7 @@ test('marketing page loads with working in-page navigation and dashboard links',
   await expect(page).toHaveURL(/app\.html$/);
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
   await expect(page.locator('#invoiceMetric')).toContainText('3 740,00 DH');
+  if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
   await page.locator('.nav button[data-page="Facturation"]').click();
   await expect(page).toHaveURL(/facturation\.html$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Facturation');
