@@ -171,3 +171,13 @@ test('account page exposes signup/login modes and has public Supabase configurat
   expect(config.publishableKey).toMatch(/^sb_publishable_/);
   expect(config.publishableKey).not.toContain('sb_secret');
 });
+
+
+test('Supabase email confirmation redirects to deployed Multy, not localhost', async ({ page }) => {
+  await page.goto('./auth.html');
+  const redirect = await page.evaluate(() => window.MULTY_SUPABASE_CONFIG?.emailRedirectTo);
+  expect(redirect).toBe('https://bdssmdkacem-dot.github.io/Multy/auth.html');
+  expect(redirect).not.toContain('localhost');
+  const authSource = await page.locator('script').allTextContents();
+  expect(authSource.join('\n')).toContain('emailRedirectTo:cfg.emailRedirectTo');
+});
