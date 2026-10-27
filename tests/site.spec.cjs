@@ -13,6 +13,7 @@ test('marketing page loads with working in-page navigation and dashboard links',
   await page.getByRole('link', { name: /Ouvrir le tableau de bord/i }).click();
   await expect(page).toHaveURL(/app\.html$/);
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
+  await expect(page.locator('#invoiceMetric')).toContainText('3 740,00 DH');
   await page.locator('.nav button[data-page="Facturation"]').click();
   await expect(page).toHaveURL(/facturation\.html$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Facturation');
