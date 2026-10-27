@@ -1,23 +1,23 @@
 const { test, expect } = require('@playwright/test');
 
-test('marketing page loads with working in-page navigation and dashboard links', async ({ page }) => {
+test('marketing page links to the dashboard and billing page', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/Multy/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('vision');
-  await page.getByRole('link', { name: /Voir les fonctionnalités/i }).click();
+  await page.getByRole('link', { name: /Voir les fonctionnalit/i }).click();
   await expect(page).toHaveURL(/#fonctionnalites$/);
   await expect(page.locator('#fonctionnalites .feature')).toHaveCount(6);
   await page.getByRole('link', { name: /Ouvrir le tableau de bord/i }).click();
   await expect(page).toHaveURL(/app\.html$/);
   await expect(page.locator('#transactionRows tr')).toHaveCount(6);
+  await page.getByRole('link', { name: /Facturation/ }).click();
+  await expect(page).toHaveURL(/facturation\.html$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Facturation');
 });
 
 test('marketing page has no horizontal overflow', async ({ page }) => {
   await page.goto('/');
-  const metrics = await page.evaluate(() => ({
-    viewport: document.documentElement.clientWidth,
-    content: document.documentElement.scrollWidth
-  }));
+  const metrics = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
   expect(metrics.content).toBeLessThanOrEqual(metrics.viewport);
 });
 
@@ -59,26 +59,59 @@ test('dashboard exports filtered transactions to CSV', async ({ page }) => {
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#exportBtn').click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('multy-transactions.csv');
+  expect(download.suggestedFilename()).toBe('multy-transactions-demo.csv');
 });
 
-test('mobile dashboard menu opens and closes after navigation', async ({ page }, testInfo) => {
+test('mobile dashboard menu closes after navigation', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.startsWith('mobile'), 'Phone-specific menu check');
   await page.goto('/app.html');
-  const toggle = page.locator('#menuToggle');
-  await expect(toggle).toBeVisible();
-  await toggle.click();
+  await page.locator('#menuToggle').click();
   await expect(page.locator('#sidebar')).toHaveClass(/open/);
-  await page.locator('.nav button[data-page="Transactions"]').click();
-  await expect(page.locator('#crumb')).toHaveText('Transactions');
+  await page.locator('.nav a[href="#transactions"]').click();
+  await expect(page).toHaveURL(/app\.html#transactions$/);
   await expect(page.locator('#sidebar')).not.toHaveClass(/open/);
 });
 
 test('dashboard has no horizontal page overflow', async ({ page }) => {
   await page.goto('/app.html');
-  const metrics = await page.evaluate(() => ({
-    viewport: document.documentElement.clientWidth,
-    content: document.documentElement.scrollWidth
-  }));
+  const metrics = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
+  expect(metrics.content).toBeLessThanOrEqual(metrics.viewport);
+});
+
+test('billing calculates totals and saves a local invoice draft', async ({ page }) => {
+  await page.goto('/facturation.html');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.getByRole('button', { name: /Nouvelle facture/ }).click();
+  await page.locator('#clientName').fill('Client test');
+  await page.locator('.line-description').fill('Conseil');
+  await page.locator('.line-quantity').fill('2');
+  await page.locator('.line-unit').fill('100');
+  await expect(page.locator('#totalHt')).toContainText('200');
+  await expect(page.locator('#totalVat')).toContainText('40');
+  await expect(page.locator('#totalTtc')).toContainText('240');
+  await page.getByRole('button', { name: 'Enregistrer le brouillon' }).click();
+  await expect(page.locator('#invoiceRows tr')).toHaveCount(5);
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Client test');
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('240');
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Brouillon');
+  await page.reload();
+  await expect(page.locator('#invoiceRows tr')).toHaveCount(5);
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Client test');
+});
+
+test('billing filters and searches the invoice list', async ({ page }) => {
+  await page.goto('/facturation.html');
+  await page.getByRole('tab', { name: 'Payées' }).click();
+  await expect(page.locator('#invoiceRows tr')).toHaveCount(1);
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Maison Créative');
+  await page.locator('#invoiceSearch').fill('absent');
+  await expect(page.locator('#emptyInvoices')).toBeVisible();
+});
+
+test('billing page fits the mobile viewport', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.startsWith('mobile'), 'Phone-specific layout check');
+  await page.goto('/facturation.html');
+  const metrics = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
   expect(metrics.content).toBeLessThanOrEqual(metrics.viewport);
 });
