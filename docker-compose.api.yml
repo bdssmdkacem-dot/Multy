@@ -1,0 +1,33 @@
+# Local development only. This compose file uses the bootstrap PostgreSQL account
+# for migrations and API access; do not use it as a production deployment.
+# Production must separate a least-privilege runtime role from a migration owner.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: multy
+      POSTGRES_USER: multy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the environment}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - multy_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U multy -d multy"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql+psycopg://multy:${POSTGRES_PASSWORD}@db:5432/multy
+      MULTY_JWT_SECRET: ${MULTY_JWT_SECRET:?Set MULTY_JWT_SECRET to a long random secret}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  multy_pgdata:

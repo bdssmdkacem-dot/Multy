@@ -1,7 +1,7 @@
 name: Validate Multy
 on:
   push:
-    branches: [main]
+    branches: [main, 'commercial/**']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -12,6 +12,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install API test dependencies
+        run: pip install -r requirements.txt
+      - name: Test server-side authorization policy
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Validate site pages
         run: |
           python - <<'PY'

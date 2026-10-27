@@ -1,0 +1,74 @@
+name: Published GitHub Pages browser acceptance
+
+on:
+  workflow_run:
+    workflows:
+      - Browser tests and GitHub Pages deployment
+    types: [completed]
+    branches:
+      - main
+      - 'commercial/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview-browser:
+    if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/commercial/') || github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'commercial/')
+    runs-on: ubuntu-24.04
+    env:
+      PLAYWRIGHT_BASE_URL: https://bdssmdkacem-dot.github.io/Multy/preview/
+      PLAYWRIGHT_EXPECT_FEATURES: '7'
+    steps:
+      - name: Checkout tested feature-branch source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run desktop and mobile tests against the branch preview
+        run: npx playwright test tests/published-smoke.spec.cjs
+      - name: Upload preview-site failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-playwright-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  production-browser:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-24.04
+    env:
+      PLAYWRIGHT_BASE_URL: https://bdssmdkacem-dot.github.io/Multy/
+    steps:
+      - name: Checkout deployed main-branch source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run desktop and mobile tests against the production site
+        run: npx playwright test tests/published-smoke.spec.cjs
+      - name: Upload production-site failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-playwright-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
