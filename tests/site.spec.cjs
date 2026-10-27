@@ -213,3 +213,23 @@ test('billing page fits the mobile viewport', async ({ page }, testInfo) => {
   const metrics = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, content: document.documentElement.scrollWidth }));
   expect(metrics.content).toBeLessThanOrEqual(metrics.viewport);
 });
+
+test('pilotage navigation opens each local demo module', async ({ page }, testInfo) => {
+  await page.goto('./app.html');
+  const modules = [
+    ['Transactions', 'Entrées du mois'],
+    ['Dépenses', 'Total du mois'],
+    ['Trésorerie', 'Comptes de trésorerie'],
+    ['Comptabilité', 'Pré-comptabilité indicative'],
+    ['Rapports', 'Chiffre d’affaires HT'],
+    ['Équipe', 'Membres de l’espace']
+  ];
+
+  for (const [name, content] of modules) {
+    if (testInfo.project.name.startsWith('mobile')) await page.locator('#menuToggle').click();
+    await page.locator('.nav button[data-page="' + name + '"]').click();
+    await expect(page.locator('#pageTitle')).toContainText(name);
+    await expect(page.locator('#modulePage')).toHaveClass(/active/);
+    await expect(page.locator('#modulePage')).toContainText(content);
+  }
+});
