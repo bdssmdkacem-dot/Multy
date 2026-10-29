@@ -179,7 +179,9 @@ begin
     target_action := 'invoice_line.' || lower(tg_op);
   else
     target_action := 'invoice.' || lower(tg_op);
-    if tg_table_name = 'invoices' then target_details := jsonb_build_object('currency', case when tg_op = 'DELETE' then old.currency else new.currency end);
+    target_details := jsonb_build_object(
+      'currency', case when tg_op = 'DELETE' then old.currency else new.currency end
+    );
   end if;
 
   select c.firm_id into target_firm_id
