@@ -4,7 +4,9 @@
 
 Ce document fixe les critères à satisfaire avant de transformer le portefeuille comptable de démonstration en service multi-entreprises. Il ne constitue pas une preuve de sécurité ni une implémentation serveur.
 
-Le produit actuel est un site statique : les entreprises et documents affichés sont des données fictives embarquées dans le navigateur. Il n'y a ni authentification, ni API, ni stockage persistant, ni contrôle d'accès côté serveur. **Ne jamais y déposer des données personnelles, comptables ou des documents réels.**
+Le dépôt contient une page Supabase Auth, des migrations RLS, une API FastAPI de pilote avec un mécanisme JWT indépendant et des écrans qui affichent encore des données fictives/locales. Ces éléments ne sont pas encore reliés en un parcours authentifié de bout en bout. Pour les nouveaux modules métier, Supabase Auth et PostgreSQL/RLS sont le chemin de données retenu. L'API FastAPI reste un pilote séparé ; son émetteur de jetons et son modèle d'utilisateur ne sont pas intégrés à Supabase Auth. **Ne jamais saisir de données personnelles ou comptables réelles dans les écrans de démonstration.**
+
+La migration `20261029120000_multy_invoicing.sql` ajoute un premier schéma RLS de clients et brouillons de facture avec lignes et totaux dérivés, mais n'a pas été appliquée au projet Supabase réel et ne rend pas l'écran Facturation persistant. Numérotation, émission et paiement restent hors de ce jalon. Elle ne constitue pas une validation fiscale marocaine. Les utilisateurs doivent fournir les taux de TVA par ligne ; aucun taux n'est supposé.
 
 ## Premier jalon de code (non déployable)
 

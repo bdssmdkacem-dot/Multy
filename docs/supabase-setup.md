@@ -1,7 +1,7 @@
 # Configuration Supabase — Multy
 
 ## État et limites
-Cette branche prépare l'intégration Supabase Auth et le schéma PostgreSQL avec Row Level Security (RLS). Le projet de développement est configuré dans `supabase-config.js` avec son URL et sa clé publishable publique. Aucun secret serveur n'est stocké dans le dépôt. L'inscription ne fonctionnera qu'après configuration du projet et application de la migration. Le tableau de bord `app.html` reste une démo locale : il n'est pas encore connecté aux tables Supabase et ses opérations ne sont pas persistantes.
+Supabase Auth et PostgreSQL avec Row Level Security (RLS) sont le chemin retenu pour les nouveaux modules de données. Le projet est configuré dans `supabase-config.js` avec une URL et une clé publishable publique ; cela ne prouve pas que la migration a été appliquée ni que le projet est prêt pour des données réelles. Aucun secret serveur n'est stocké dans le dépôt. `auth.html` et le dashboard ne forment pas encore un parcours SaaS complet, et les écrans `app.html` et `facturation.html` restent des démos locales.
 
 ## 1. Créer le projet
 1. Créez un projet Supabase dédié à l'environnement de développement/test.
@@ -9,10 +9,14 @@ Cette branche prépare l'intégration Supabase Auth et le schéma PostgreSQL ave
 3. Dans Project Settings / API, copiez uniquement l'URL du projet et la clé **publishable** (ou la clé anon legacy). Ne partagez jamais la clé `service_role` ni une clé secrète.
 
 ## 2. Appliquer le schéma et les politiques
-Dans SQL Editor, exécutez `supabase/migrations/20261022110000_multy_auth_rls.sql`.
-La migration ajoute les profils, cabinets, membres, entreprises, transactions, journal d'audit, RLS et la fonction `create_initial_firm`. Vérifiez le résultat dans Database / Tables et Authentication / Policies avant tout test.
+Dans SQL Editor ou avec Supabase CLI, appliquez les migrations dans l'ordre uniquement après avoir confirmé l'état du projet :
 
-La première version n'autorise pas les utilisateurs à ajouter eux-mêmes des membres ni à modifier les rôles. Les invitations, la révocation, la gestion complète des entreprises et les documents nécessitent des flux serveur supplémentaires. Le journal d'audit capture les changements de transactions sans inclure montants ni descriptions. Ses références sont volontairement sans clés étrangères pour éviter la réécriture de l'historique lors d'une suppression. Ce journal n'est pas un archivage externe inviolable ; configurez un export externe surveillé avant la production.
+1. `supabase/migrations/20261022110000_multy_auth_rls.sql` ajoute profils, cabinets, membres, entreprises, transactions, journal d'audit, RLS et `create_initial_firm`.
+2. `supabase/migrations/20261029120000_multy_invoicing.sql` ajoute les clients et brouillons de facture avec isolation par entreprise, règles d'accès par rôle et totaux calculés depuis les lignes.
+
+La deuxième migration n'a pas été appliquée au projet Supabase réel. Elle doit d'abord réussir les tests PostgreSQL isolés (`tests/test_supabase_migrations.py`) et faire l'objet d'une revue de sécurité avant tout déploiement. Vérifiez le résultat dans Database / Tables et Authentication / Policies avant tout test.
+
+Les migrations ne connectent pas encore les pages web aux tables. La migration de facturation ne permet que les brouillons ; numérotation, émission, avoirs et paiements ne sont pas encore implémentés. La première version n'autorise pas les utilisateurs à ajouter eux-mêmes des membres ni à modifier les rôles. Les invitations, la révocation, la gestion complète des entreprises, les paiements et les documents nécessitent des flux supplémentaires. Les taux de TVA des lignes sont fournis par l'utilisateur sans taux par défaut ; leur traitement fiscal et les mentions légales doivent être validés par un professionnel marocain. Le journal d'audit évite de copier les coordonnées clients, descriptions de lignes et montants. Ses références sont volontairement sans clés étrangères pour éviter la réécriture de l'historique lors d'une suppression. Ce journal n'est pas un archivage externe inviolable ; configurez un export externe surveillé avant la production.
 
 ## 3. Configurer le site statique
 `supabase-config.js` contient déjà l'URL et la clé publishable communiquées pour le projet. Ces deux valeurs sont prévues pour être visibles dans le navigateur ; RLS est donc obligatoire. N'y placez aucun mot de passe ni clé secrète.
