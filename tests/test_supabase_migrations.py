@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import os
 import json
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
@@ -179,7 +181,7 @@ def test_supabase_invoicing_migration_enforces_tenant_rls_and_totals():
                 assert db.execute(
                     "select amount, category, occurred_on from public.transactions where company_id = %s",
                     (company_a,),
-                ).fetchone() == (-74.90, "Informatique", "2026-10-10")
+                ).fetchone() == (Decimal("-74.90"), "Informatique", date(2026, 10, 10))
 
                 with pytest.raises(InsufficientPrivilege):
                     with db.transaction():
