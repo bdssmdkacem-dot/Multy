@@ -6,6 +6,7 @@ Set MULTY_SUPABASE_TEST_ADMIN_DSN only to a disposable PostgreSQL superuser conn
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 from uuid import uuid4
 
@@ -121,8 +122,51 @@ def test_supabase_invoicing_migration_enforces_tenant_rls_and_totals():
                 ).fetchone()
                 assert totals == (1, 200, 40, 240)
 
-                assert db.execute("select count(*) from public.clients").fetchone()[0] == 1
-                assert db.execute("select count(*) from public.invoices").fetchone()[0] == 1
+                # Exercise the same atomic save path used by the connected UI.
+                saved_invoice = db.execute(
+                    """
+                    select public.save_invoice_draft(
+                      %s, null, null, 'RPC Client', 'MA123', date '2026-10-02',
+                      date '2026-11-01', 'Private note', 20, %s::jsonb
+                    )
+                    """,
+                    (company_a, json.dumps([{"description": "RPC service", "quantity": 2, "unit_price": 100}])),
+                ).fetchone()[0]
+                rpc_totals = db.execute(
+                    "select total_ht, total_vat, total_ttc from public.invoice_totals where invoice_id = %s",
+                    (saved_invoice,),
+                ).fetchone()
+                assert rpc_totals == (200, 40, 240)
+                saved_client = db.execute(
+                    "select client_id from public.invoices where id = %s", (saved_invoice,)
+                ).fetchone()[0]
+                db.execute(
+                    """
+                    select public.save_invoice_draft(
+                      %s, %s, %s, 'RPC Client Updated', 'MA123', date '2026-10-02',
+                      date '2026-11-01', 'Private note', 20,
+                      %s::jsonb
+                    )
+                    """,
+                    (company_a, saved_invoice, saved_client,
+                     json.dumps([{"description": "Replacement", "quantity": 1, "unit_price": 150}])),
+                )
+                assert db.execute(
+                    "select total_ht, total_vat, total_ttc from public.invoice_totals where invoice_id = %s",
+                    (saved_invoice,),
+                ).fetchone() == (150, 30, 180)
+
+                created_company = db.execute(
+                    "select public.create_company(%s, 'Atelier secondaire')", (firm_a,)
+                ).fetchone()[0]
+                assert db.execute(
+                    "select name from public.companies where id = %s", (created_company,)
+                ).fetchone() == ("Atelier secondaire",)
+                with pytest.raises(InsufficientPrivilege):
+                    db.execute("select public.create_company(%s, 'Intrusion')", (firm_b,))
+
+                assert db.execute("select count(*) from public.clients").fetchone()[0] == 2
+                assert db.execute("select count(*) from public.invoices").fetchone()[0] == 2
 
                 with pytest.raises(InsufficientPrivilege):
                     with db.transaction():

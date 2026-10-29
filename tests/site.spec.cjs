@@ -199,6 +199,56 @@ test('billing calculates totals and saves a local invoice draft', async ({ page 
   await expect(page.locator('#invoiceRows tr').first()).toContainText('Client test');
 });
 
+test('authenticated billing saves and reloads a tenant draft through Supabase', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: `(() => {
+      const userId = '11111111-1111-4111-8111-111111111111';
+      const firmId = '22222222-2222-4222-8222-222222222222';
+      const companyId = '33333333-3333-4333-8333-333333333333';
+      const client = { auth: { getSession: async () => ({ data: { session: { user: { id: userId } } }, error: null }) },
+        from(table) {
+          const query = { filters: {}, select() { return this; }, limit() { return this; }, order() { return this; },
+            eq(key, value) { this.filters[key] = value; return this; },
+            then(resolve) {
+              const data = table === 'firm_members' ? [{ firm_id: firmId, role: 'firm_admin' }]
+                : table === 'companies' ? [{ id: companyId, name: 'Atelier test' }]
+                : window.__savedInvoices.filter(invoice => invoice.company_id === this.filters.company_id);
+              resolve({ data, error: null });
+            } };
+          return query;
+        },
+        async rpc(name, args) {
+          if (name !== 'save_invoice_draft') return { data: companyId, error: null };
+          const id = args.p_invoice_id || '44444444-4444-4444-8444-444444444444';
+          const row = { id, company_id: args.p_company_id, client_id: '55555555-5555-4555-8555-555555555555',
+            issue_date: args.p_issue_date, due_date: args.p_due_date, status: 'draft', note: args.p_note,
+            clients: { name: args.p_client_name, tax_identifier: args.p_tax_identifier },
+            invoice_items: args.p_items.map(line => ({ description: line.description, quantity: line.quantity,
+              unit_price: line.unit_price, vat_rate: args.p_vat_rate })) };
+          window.__savedInvoices = [row, ...window.__savedInvoices.filter(invoice => invoice.id !== id)];
+          return { data: id, error: null };
+        } };
+      window.__savedInvoices = [];
+      window.supabase = { createClient: () => client };
+    })();`
+  }));
+  await page.goto('./facturation.html');
+  await expect(page.locator('#storageState')).toContainText('Données synchronisées');
+  await expect(page.locator('#accountLink')).toBeHidden();
+  await expect(page.locator('#invoiceRows tr')).toHaveCount(0);
+  await page.locator('#newInvoice').click();
+  await page.locator('#clientName').fill('Client persistant');
+  await page.locator('.line-description').fill('Conseil');
+  await page.locator('.line-quantity').fill('2');
+  await page.locator('.line-unit').fill('100');
+  await page.locator('#invoiceForm [type="submit"]').click();
+  await expect(page.locator('#invoiceRows tr')).toHaveCount(1);
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('Client persistant');
+  await expect(page.locator('#invoiceRows tr').first()).toContainText('240,00 DH');
+  await expect(page.locator('#toast')).toContainText('enregistré dans Supabase');
+});
+
 test('billing filters and searches the invoice list', async ({ page }) => {
   await page.goto('./facturation.html');
   await page.getByRole('tab', { name: 'Payées' }).click();

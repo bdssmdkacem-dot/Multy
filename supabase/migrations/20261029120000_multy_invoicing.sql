@@ -21,6 +21,34 @@ $function$;
 revoke all on function public.is_company_editor(uuid) from public, anon;
 grant execute on function public.is_company_editor(uuid) to authenticated;
 
+-- Let firm administrators create their first operating company without exposing
+-- direct writes to the shared companies table.
+create or replace function public.create_company(p_firm_id uuid, p_name text)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  new_company_id uuid;
+begin
+  if p_name is null or char_length(trim(p_name)) < 2 or char_length(trim(p_name)) > 180 then
+    raise exception 'Company name must be between 2 and 180 characters' using errcode = '22023';
+  end if;
+  if not exists (
+    select 1 from public.firm_members m
+    where m.firm_id = p_firm_id and m.user_id = auth.uid() and m.role = 'firm_admin'
+  ) then
+    raise exception 'Firm administrator access required' using errcode = '42501';
+  end if;
+  insert into public.companies(firm_id, name)
+  values (p_firm_id, trim(p_name)) returning id into new_company_id;
+  return new_company_id;
+end;
+$function$;
+revoke all on function public.create_company(uuid, text) from public, anon;
+grant execute on function public.create_company(uuid, text) to authenticated;
+
 create table public.clients (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies(id) on delete restrict,
@@ -282,6 +310,73 @@ using (exists (
   where i.id = invoice_items.invoice_id and i.company_id = invoice_items.company_id
     and i.status = 'draft' and public.is_company_editor(i.company_id)
 ));
+
+-- Persist an entire draft in one transaction, including its client and lines.
+-- This function runs as the caller so every statement remains subject to RLS.
+create or replace function public.save_invoice_draft(
+  p_company_id uuid,
+  p_invoice_id uuid,
+  p_client_id uuid,
+  p_client_name text,
+  p_tax_identifier text,
+  p_issue_date date,
+  p_due_date date,
+  p_note text,
+  p_vat_rate numeric,
+  p_items jsonb
+)
+returns uuid
+language plpgsql
+set search_path = ''
+as $function$
+declare
+  target_client_id uuid := p_client_id;
+  target_invoice_id uuid := coalesce(p_invoice_id, gen_random_uuid());
+begin
+  if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
+    raise exception 'At least one invoice line is required' using errcode = '22023';
+  end if;
+  if p_vat_rate < 0 or p_vat_rate > 100 then
+    raise exception 'VAT rate is outside the supported range' using errcode = '22023';
+  end if;
+
+  if target_client_id is null then
+    insert into public.clients(company_id, name, tax_identifier)
+    values (p_company_id, p_client_name, nullif(trim(coalesce(p_tax_identifier, '')), ''))
+    returning id into target_client_id;
+  else
+    update public.clients
+       set name = p_client_name,
+           tax_identifier = nullif(trim(coalesce(p_tax_identifier, '')), '')
+     where id = target_client_id and company_id = p_company_id;
+    if not found then
+      raise exception 'Client is unavailable in this company' using errcode = '42501';
+    end if;
+  end if;
+
+  if p_invoice_id is null then
+    insert into public.invoices(id, company_id, client_id, issue_date, due_date, note)
+    values (target_invoice_id, p_company_id, target_client_id, p_issue_date, p_due_date, coalesce(p_note, ''));
+  else
+    update public.invoices
+       set client_id = target_client_id, issue_date = p_issue_date,
+           due_date = p_due_date, note = coalesce(p_note, '')
+     where id = p_invoice_id and company_id = p_company_id and status = 'draft';
+    if not found then
+      raise exception 'Draft invoice is unavailable in this company' using errcode = '42501';
+    end if;
+    delete from public.invoice_items where invoice_id = p_invoice_id and company_id = p_company_id;
+  end if;
+
+  insert into public.invoice_items(company_id, invoice_id, description, quantity, unit_price, vat_rate)
+  select p_company_id, target_invoice_id, item.description, item.quantity, item.unit_price, p_vat_rate
+  from jsonb_to_recordset(p_items) as item(description text, quantity numeric, unit_price numeric);
+
+  return target_invoice_id;
+end;
+$function$;
+revoke all on function public.save_invoice_draft(uuid, uuid, uuid, text, text, date, date, text, numeric, jsonb) from public, anon;
+grant execute on function public.save_invoice_draft(uuid, uuid, uuid, text, text, date, date, text, numeric, jsonb) to authenticated;
 
 commit;
 
