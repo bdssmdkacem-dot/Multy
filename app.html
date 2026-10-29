@@ -35,8 +35,8 @@
 <div class="side-bottom"><strong>Besoin d'un coup de main ?</strong>Consultez le centre d'aide Multy<br><span style="display:inline-block;margin-top:10px;color:var(--lime)">Ouvrir le centre d'aide ↗</span></div>
 </aside>
 <main class="main">
-<header class="topbar"><div style="display:flex;align-items:center;gap:13px"><button class="icon-btn mobile-menu" id="menuToggle" aria-label="Ouvrir le menu">☰</button><div class="crumb">Atelier Nova <span style="margin:0 8px;color:#c1c9c4">/</span> <strong id="crumb">Vue d'ensemble</strong></div></div><div class="top-actions"><input class="search" id="search" type="search" placeholder="⌕  Rechercher…" aria-label="Rechercher une transaction"><button class="icon-btn" id="notify" aria-label="Notifications">♧</button><div class="avatar" style="width:36px;height:36px">AN</div></div></header>
-<div class="content">
+<header class="topbar"><div style="display:flex;align-items:center;gap:13px"><button class="icon-btn mobile-menu" id="menuToggle" aria-label="Ouvrir le menu">☰</button><div class="crumb">Atelier Nova <span style="margin:0 8px;color:#c1c9c4">/</span> <strong id="crumb">Vue d'ensemble</strong></div></div><div class="top-actions"><input class="search" id="search" type="search" placeholder="⌕  Rechercher…" aria-label="Rechercher une transaction"><a class="btn" id="accountLink" href="./auth.html" hidden>Se connecter</a><button class="btn" id="signOut" type="button" hidden>Se déconnecter</button><button class="icon-btn" id="notify" aria-label="Notifications">♧</button><div class="avatar" style="width:36px;height:36px">AN</div></div></header>
+<div class="content"><div id="transactionsNotice" class="module-banner" hidden></div>
 <section class="page-heading"><div><div class="eyebrow">JEUDI 16 OCTOBRE 2026</div><h1 id="pageTitle">Bonjour, Alex <span style="font-size:25px">✳</span></h1><p>Voici ce qui se passe dans votre activité aujourd'hui.</p></div><div class="heading-actions"><select class="period" id="period" aria-label="Période"><option value="month">Ce mois-ci</option><option value="quarter">Ce trimestre</option><option value="year">Cette année</option></select><button class="btn" id="exportBtn">↓ Exporter</button><button class="btn btn-primary" id="newBtn">＋ Nouvelle opération</button></div></section>
 
 <section class="accountant-workspace" id="accountantWorkspace" aria-label="Espace comptable multi-entreprises">
@@ -84,9 +84,9 @@
 <tr data-search="cloudway hébergement serveur informatique"><td><div class="transaction-name"><div class="merchant-icon">C</div><div><strong>Cloudway</strong><span>Hébergement & services cloud</span></div></div></td><td>10 oct. 2026</td><td>Informatique</td><td><span class="status review">À vérifier</span></td><td class="amount">−74,90 DH</td></tr>
 <tr data-search="maison créative facture client revenus"><td><div class="transaction-name"><div class="merchant-icon">M</div><div><strong>Maison Créative</strong><span>Facture client · FAC-2026-078</span></div></div></td><td>08 oct. 2026</td><td>Prestations</td><td><span class="status paid">Encaissé</span></td><td class="amount positive">+1 680,00 DH</td></tr>
 </tbody></table><div class="empty" id="emptyState">Aucune transaction ne correspond à votre recherche.</div></div></section>
-<section id="modulePage" class="module-page" aria-live="polite"></section><div class="footer"><span>© 2026 Multy · Votre activité au Maroc, en clair.</span><span>Démo · Montants fictifs en DH · Aucune banque connectée · Aucune sauvegarde durable</span></div>
+<section id="modulePage" class="module-page" aria-live="polite"></section><div class="footer"><span>© 2026 Multy · Votre activité au Maroc, en clair.</span><span id="storageState">Démo · Montants fictifs en DH · Aucune banque connectée · Aucune sauvegarde durable</span></div>
 </div></main></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./supabase-config.js"></script><script>
 (()=>{const $=s=>document.querySelector(s);const $$=s=>document.querySelectorAll(s);let toastTimer;function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600)}
 $('#menuToggle').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
 const moduleHtml={
@@ -149,4 +149,5 @@ $('#notify').addEventListener('click',()=>toast('Vous êtes à jour — aucune n
 $('#moreCash').addEventListener('click',()=>toast('Les détails de trésorerie sont affichés dans ce prototype.'));
 })();
 </script>
+<script src="./supabase-transactions.js"></script>
 </body></html>

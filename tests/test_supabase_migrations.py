@@ -39,6 +39,7 @@ def test_supabase_invoicing_migration_enforces_tenant_rls_and_totals():
         assert [path.name for path in migration_paths] == [
             "20261022110000_multy_auth_rls.sql",
             "20261029120000_multy_invoicing.sql",
+            "20261030120000_multy_transactions.sql",
         ]
 
         with psycopg.connect(test_dsn, autocommit=True) as db:
@@ -94,6 +95,13 @@ def test_supabase_invoicing_migration_enforces_tenant_rls_and_totals():
             with db.transaction():
                 db.execute("set local role authenticated")
                 db.execute("select set_config('request.jwt.claim.sub', %s, true)", (str(alice),))
+                db.execute(
+                    """
+                    insert into public.transactions(company_id, description, amount, category, occurred_on)
+                    values (%s, 'Cloud hosting', -74.90, 'Informatique', date '2026-10-10')
+                    """,
+                    (company_a,),
+                )
                 db.execute(
                     "insert into public.clients (id, company_id, name, email) values (%s, %s, %s, %s)",
                     (client_a, company_a, "Client A", "private@example.test"),
@@ -168,6 +176,10 @@ def test_supabase_invoicing_migration_enforces_tenant_rls_and_totals():
 
                 assert db.execute("select count(*) from public.clients").fetchone()[0] == 2
                 assert db.execute("select count(*) from public.invoices").fetchone()[0] == 2
+                assert db.execute(
+                    "select amount, category, occurred_on from public.transactions where company_id = %s",
+                    (company_a,),
+                ).fetchone() == (-74.90, "Informatique", "2026-10-10")
 
                 with pytest.raises(InsufficientPrivilege):
                     with db.transaction():
@@ -186,6 +198,7 @@ def test_supabase_invoicing_migration_enforces_tenant_rls_and_totals():
                 db.execute("select set_config('request.jwt.claim.sub', %s, true)", (str(bob),))
                 assert db.execute("select count(*) from public.clients").fetchone()[0] == 0
                 assert db.execute("select count(*) from public.invoices").fetchone()[0] == 0
+                assert db.execute("select count(*) from public.transactions").fetchone()[0] == 0
                 assert db.execute("select count(*) from public.invoice_totals").fetchone()[0] == 0
 
             with db.transaction():
@@ -200,6 +213,15 @@ def test_supabase_invoicing_migration_enforces_tenant_rls_and_totals():
                             values (%s, %s, date '2026-10-01', date '2026-10-31')
                             """,
                             (company_a, client_a),
+                        )
+                with pytest.raises(InsufficientPrivilege):
+                    with db.transaction():
+                        db.execute(
+                            """
+                            insert into public.transactions(company_id, description, amount, category, occurred_on)
+                            values (%s, 'Forbidden', 1, 'Divers', date '2026-10-10')
+                            """,
+                            (company_a,),
                         )
 
             with db.transaction():

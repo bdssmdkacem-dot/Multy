@@ -79,6 +79,45 @@ test('dashboard can add a validated demo transaction', async ({ page }) => {
   expect(dialogCount).toBe(2);
 });
 
+test('authenticated transactions replace demo rows and persist signed MAD entries', async ({ page }) => {
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: `(() => {
+      const firmId = '22222222-2222-4222-8222-222222222222';
+      const companyId = '33333333-3333-4333-8333-333333333333';
+      window.__txs = [{ id: '44444444-4444-4444-8444-444444444444', company_id: companyId,
+        description: 'Opening entry', amount: 250, currency: 'MAD', category: 'Prestations', occurred_on: '2026-10-10' }];
+      const client = { auth: { getSession: async () => ({ data: { session: { user: { id: '11111111-1111-4111-8111-111111111111' } } }, error: null }), signOut: async () => ({ error: null }) },
+        from(table) {
+          const query = { filters: {}, select() { return this; }, limit() { return this; }, order() { return this; },
+            eq(key, value) { this.filters[key] = value; return this; },
+            insert(row) { window.__txs.unshift({ ...row, id: crypto.randomUUID() }); return Promise.resolve({ error: null }); },
+            then(resolve) {
+              const data = table === 'firm_members' ? [{ firm_id: firmId, role: 'firm_admin' }]
+                : table === 'companies' ? [{ id: companyId, name: 'Atelier test' }]
+                : window.__txs.filter(transaction => transaction.company_id === this.filters.company_id);
+              resolve({ data, error: null });
+            } };
+          return query;
+        } };
+      window.supabase = { createClient: () => client };
+    })();`
+  }));
+  await page.goto('./app.html');
+  await expect(page.locator('#storageState')).toContainText('Transactions sauvegardées dans Supabase');
+  await expect(page.locator('#transactionsNotice')).toContainText('autres modules restent des exemples');
+  await expect(page.locator('#transactionRows tr')).toHaveCount(1);
+  await expect(page.locator('#transactionRows tr').first()).toContainText('Opening entry');
+  await expect(page.locator('#transactionRows tr').first()).not.toContainText('Studio Pixel');
+  const prompts = ['Cloud hosting', '-74,90', 'Informatique'];
+  page.on('dialog', dialog => dialog.accept(prompts.shift()));
+  await page.locator('#newBtn').click();
+  await expect(page.locator('#transactionRows tr')).toHaveCount(2);
+  await expect(page.locator('#transactionRows tr').first()).toContainText('Cloud hosting');
+  await expect(page.locator('#transactionRows tr').first()).toContainText('−74,90 DH');
+  await expect(page.locator('#transactionRows tr').first()).toContainText('Informatique');
+});
+
 test('dashboard exports filtered transactions to CSV', async ({ page }) => {
   await page.goto('./app.html');
   await page.locator('#search').fill('Notion');
