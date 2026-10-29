@@ -163,7 +163,8 @@ def test_supabase_invoicing_migration_enforces_tenant_rls_and_totals():
                     "select name from public.companies where id = %s", (created_company,)
                 ).fetchone() == ("Atelier secondaire",)
                 with pytest.raises(InsufficientPrivilege):
-                    db.execute("select public.create_company(%s, 'Intrusion')", (firm_b,))
+                    with db.transaction():
+                        db.execute("select public.create_company(%s, 'Intrusion')", (firm_b,))
 
                 assert db.execute("select count(*) from public.clients").fetchone()[0] == 2
                 assert db.execute("select count(*) from public.invoices").fetchone()[0] == 2
